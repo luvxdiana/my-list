@@ -194,4 +194,18 @@ router.get("/me", requireAuth, async (req, res) => {
 });
 
 
+/* LOGOUT */
+router.post("/logout", (req, res) => {
+  res.clearCookie("mylist_session", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/"
+  });
+
+  return res.status(200).json({
+    message: "Logged out successfully!"
+  });
+});
+
 module.exports = router;
