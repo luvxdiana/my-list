@@ -5,6 +5,8 @@ const cookieParser = require("cookie-parser");
 
 const authRoutes = require("./routes/auth");
 const entriesRoutes = require("./routes/entries");
+const photoRoutes = require("./routes/photos");
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +30,8 @@ app.use("/api/auth", authRoutes);
 // Entries
 
 app.use("/api/entries", entriesRoutes);
+app.use("/api/entries", photoRoutes);
+
 
 // Frontend
 

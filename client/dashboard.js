@@ -211,8 +211,7 @@ photoInput.addEventListener("change", () => {
     photoPreview.hidden = false;
     photoLabel.classList.add("has-image");
 
-    saveMessage.textContent =
-        "Photo preview only. Image storage is not available yet.";
+    saveMessage.textContent = "";
 });
 
 photoPreview.addEventListener("error", () => {
@@ -595,12 +594,14 @@ document.querySelectorAll(".filter-btn").forEach(button => {
 
 searchField.addEventListener("input", renderEntries);
 
+
 // Save
 
 entryForm.addEventListener("submit", async event => {
     event.preventDefault();
 
     const formData = new FormData(entryForm);
+    const photoFile = photoInput.files[0] || null;
 
     const lengthValue = formData.get("length");
     const ratingValue = formData.get("rating");
@@ -617,16 +618,18 @@ entryForm.addEventListener("submit", async event => {
     };
 
     const isEditing = editingEntryId !== null;
-    const entryId = editingEntryId;
-    const hasNewPhoto = photoInput.files.length > 0;
 
     const url = isEditing
-        ? `/api/entries/${encodeURIComponent(entryId)}`
+        ? `/api/entries/${encodeURIComponent(editingEntryId)}`
         : "/api/entries";
 
     saveButton.disabled = true;
     saveButton.textContent = "SAVING...";
     saveMessage.textContent = "";
+    dashboardMessage.textContent = "";
+
+    let entrySaved = false;
+    let savedEntryId = editingEntryId;
 
     try {
         const response = await fetch(url, {
@@ -644,34 +647,73 @@ entryForm.addEventListener("submit", async event => {
             throw new Error(data.message || "Could not save entry.");
         }
 
+        entrySaved = true;
+        savedEntryId = data.entry.id;
+
+        if (photoFile) {
+            saveButton.textContent = "UPLOADING PHOTO...";
+
+            const photoData = new FormData();
+            photoData.append("photo", photoFile);
+
+            const photoResponse = await fetch(
+                `/api/entries/${encodeURIComponent(savedEntryId)}/photo`,
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    body: photoData
+                }
+            );
+
+            const photoResult = await photoResponse.json();
+
+            if (!photoResponse.ok) {
+                throw new Error(
+                    photoResult.message || "Could not upload photo."
+                );
+            }
+        }
+
         entryDialog.close();
         resetEntryForm();
 
         try {
             await loadEntries();
 
-            dashboardMessage.textContent = hasNewPhoto
-                ? "Entry saved. The photo has not been uploaded yet."
-                : isEditing
-                    ? "Entry updated successfully."
-                    : "Entry saved successfully.";
+            dashboardMessage.textContent = isEditing
+                ? "Entry updated successfully."
+                : "Entry saved successfully.";
         } catch (error) {
             console.error(error);
+
             dashboardMessage.textContent =
                 "Entry saved, but the library could not refresh.";
         }
     } catch (error) {
-        saveMessage.textContent = error.message;
+        if (entrySaved) {
+            editingEntryId = savedEntryId;
+            deleteButton.hidden = false;
+
+            saveMessage.textContent =
+                `Entry saved, but the photo could not be uploaded: ${error.message}`;
+
+            try {
+                await loadEntries();
+            } catch (loadError) {
+                console.error(loadError);
+            }
+        } else {
+            saveMessage.textContent = error.message;
+        }
     } finally {
         saveButton.disabled = false;
 
-        if (entryDialog.open) {
-            saveButton.textContent = isEditing
-                ? "SAVE CHANGES"
-                : "SAVE";
-        }
+        saveButton.textContent = editingEntryId === null
+            ? "SAVE"
+            : "SAVE CHANGES";
     }
 });
+
 
 // Delete
 
