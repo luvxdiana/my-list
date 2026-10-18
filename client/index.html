@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My List | Login</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <!-- Website logo -->
+    <header class="site-header">
+        <img
+            src="assets/logo.png"
+            alt="My List"
+            class="logo"
+        >
+    </header>
+
+    <main class="auth-container">
+
+        <!-- LOGIN FORM -->
+        <section class="auth-card" id="login-section">
+
+            <h1>LOG IN</h1>
+
+            <form id="login-form">
+
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="E-mail"
+                    aria-label="E-mail"
+                    autocomplete="email"
+                    required
+                >
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    aria-label="Password"
+                    autocomplete="current-password"
+                    required
+                >
+                <span class="forgot-password">Forgot password?</span>
+                <button type="submit" class="submit-btn">
+                    LOGIN
+                </button>
+
+                <p class="auth-switch">
+                    Don't have an account?
+                    <button type="button" id="show-register">
+                        Register
+                    </button>
+                </p>
+
+                <p class="form-message" id="login-message" role="status" aria-live="polite"></p>
+
+            </form>
+        </section>
+
+
+        <!-- REGISTER FORM -->
+        <section class="auth-card" id="register-section" hidden>
+
+            <h1>REGISTER</h1>
+
+            <form id="register-form">
+
+                <input
+                    type="text"
+                    name="username"
+                    placeholder="Username"
+                    aria-label="Username"
+                    autocomplete="username"
+                    minlength="2"
+                    maxlength="50"
+                    required
+                >
+
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="E-mail"
+                    aria-label="E-mail"
+                    autocomplete="email"
+                    required
+                >
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    aria-label="Password"
+                    autocomplete="new-password"
+                    minlength="10"
+                    required
+                >
+
+                <input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder="Confirm password"
+                    aria-label="Confirm password"
+                    autocomplete="new-password"
+                    minlength="10"
+                    required
+                >
+
+                <button type="submit" class="submit-btn">
+                    REGISTER
+                </button>
+
+                <p class="auth-switch">
+                    Already have an account?
+                    <button type="button" id="show-login">
+                        Log in
+                    </button>
+                </p>
+
+                <p class="form-message" id="register-message" role="status" aria-live="polite"></p>
+
+            </form>
+        </section>
+
+    </main>
+
+</body>
+</html>

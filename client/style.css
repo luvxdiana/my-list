@@ -1,0 +1,305 @@
+
+/*MY LIST — COLOR PALETTE*/
+
+:root {
+    --porcelain: #FFFFF6;
+    --bone: #E8E2D4;
+    --lilac-ash: #AAA0BB;
+    --lavender: #B57DDA;
+    --french-blue: #41478B;
+}
+
+
+/*GENERAL STYLES*/
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    min-height: 100svh;
+
+    background:
+        linear-gradient(
+            rgba(65, 71, 139, 0.08),
+            rgba(65, 71, 139, 0.08)
+        ),
+        url("assets/background.png");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    color: var(--porcelain);
+    font-family: Arial, sans-serif;
+}
+
+
+/*LOGO*/
+
+.site-header {
+    position: absolute;
+    top: 35px;
+    left: 55px;
+    z-index: 10;
+}
+
+.logo {
+    width: 400px;
+    height: auto;
+    display: block;
+}
+
+
+/*AUTHENTICATION CONTAINER*/
+
+.auth-container {
+    min-height: 100vh;
+    min-height: 100svh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 110px 20px 35px;
+}
+
+
+/*GLASS CARD*/
+
+.auth-card {
+    width: 100%;
+    max-width: 460px;
+    min-height: 590px;
+
+    padding: 36px 42px;
+
+    background: rgba(255, 255, 246, 0.13);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border: 3px solid var(--bone);
+    border-radius: 13px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Make sure the inactive form stays hidden */
+
+.auth-card[hidden] {
+    display: none !important;
+}
+
+
+/*HEADINGS*/
+
+.auth-card h1 {
+    font-family: Georgia, serif;
+    font-size: 56px;
+    font-weight: 400;
+
+    color: var(--bone);
+
+    text-align: center;
+    margin-bottom: 55px;
+}
+
+
+/*FORMS*/
+
+.auth-card form {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 14px;
+}
+
+.auth-card input {
+    width: 100%;
+    height: 45px;
+
+    padding: 0 20px;
+
+    background: rgba(255, 255, 246, 0.12);
+
+    border: 2px solid var(--bone);
+    border-radius: 30px;
+
+    outline: none;
+
+    color: var(--french-blue);
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: 0.3s ease;
+}
+
+.auth-card input::placeholder {
+    color: var(--french-blue);
+    opacity: 0.9;
+}
+
+.auth-card input:focus {
+    border-color: var(--lavender);
+
+    background: rgba(255, 255, 246, 0.3);
+
+    box-shadow: 0 0 10px rgba(181, 125, 218, 0.3);
+}
+
+
+/*LOGIN / REGISTER BUTTON*/
+
+.submit-btn {
+    margin-top: 65px;
+
+    width: 170px;
+    height: 48px;
+
+    border: none;
+    border-radius: 30px;
+
+    background: var(--bone);
+    color: var(--french-blue);
+
+    font-family: Georgia, serif;
+    font-size: 18px;
+
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.submit-btn:hover {
+    background: var(--porcelain);
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 5px 18px rgba(65, 71, 139, 0.2);
+}
+
+
+/* SWITCH BETWEEN LOGIN / REGISTER*/
+
+.auth-switch {
+    margin-top: 5px;
+
+    color: var(--porcelain);
+    text-align: center;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.auth-switch button {
+    border: none;
+    background: transparent;
+
+    color: var(--french-blue);
+
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.auth-switch button:hover {
+    color: var(--porcelain);
+    text-decoration: underline;
+}
+
+
+/*FORM MESSAGES*/
+
+.form-message {
+    min-height: 20px;
+    margin-top: 12px;
+
+    color: var(--porcelain);
+    text-align: center;
+    font-size: 13px;
+}
+
+
+/*REGISTER CARD*/
+
+#register-section .submit-btn {
+    margin-top: 35px;
+}
+
+#register-section h1 {
+    margin-bottom: 35px;
+}
+
+
+/*RESPONSIVE DESIGN*/
+
+@media (max-width: 600px) {
+
+    .site-header {
+        top: 20px;
+        left: 20px;
+    }
+
+    .logo {
+        width: 145px;
+    }
+
+    .auth-container {
+        padding: 115px 20px 30px;
+    }
+
+    .auth-card {
+        max-width: 390px;
+        min-height: 520px;
+
+        padding: 30px 25px;
+    }
+
+    .auth-card h1 {
+        font-size: 42px;
+        margin-bottom: 45px;
+    }
+
+    .submit-btn {
+        margin-top: 45px;
+    }
+
+    #register-section .submit-btn {
+        margin-top: 25px;
+    }
+}
+
+@media (max-height: 650px) {
+    .auth-card {
+        min-height: auto;
+    }
+
+    .auth-container {
+        padding-top: 105px;
+    }
+
+    .submit-btn {
+        margin-top: 30px;
+    }
+}
+
+.forgot-password {
+    align-self: flex-start;
+    margin-left: 10px;
+    margin-top: -5px;
+
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #FFFFF6;
+}
