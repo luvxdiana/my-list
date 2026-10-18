@@ -3,6 +3,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const pool = require("../db");
 const jwt = require("jsonwebtoken");
+const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 
@@ -161,5 +162,36 @@ router.post("/login", async (req, res) => {
     });
   }
 });
+
+
+/* GET CURRENT USER */
+router.get("/me", requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, username, email
+       FROM users
+       WHERE id = $1`,
+      [req.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        message: "User not found"
+      });
+    }
+
+    return res.status(200).json({
+      user: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error("Get user error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error"
+    });
+  }
+});
+
 
 module.exports = router;
