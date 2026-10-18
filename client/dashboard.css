@@ -235,12 +235,14 @@ body {
     padding-left: 15px;
 }
 
+
 .add-new-card {
     width: 100%;
-    min-height: 240px;
+    height: auto;
+    min-height: 0;
     aspect-ratio: 3 / 4;
     border: 2px dashed var(--lilac);
-    border-radius: 12px;
+    border-radius: 14px;
     background: rgba(255, 255, 246, 0.16);
     color: var(--lavender);
     display: flex;
@@ -251,6 +253,7 @@ body {
     cursor: pointer;
     transition: background 0.2s, border-color 0.2s;
 }
+
 
 .add-new-card:hover {
     border-color: var(--lavender);
@@ -624,4 +627,201 @@ body {
     .main-nav {
         gap: 8px;
     }
+}
+
+
+
+/* Media Cards */
+
+.media-entry {
+    position: relative;
+    min-width: 0;
+}
+
+.media-entry:hover,
+.media-entry:focus-within {
+    z-index: 5;
+}
+
+.media-open {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--white);
+    text-align: center;
+    cursor: pointer;
+}
+
+.media-open:focus-visible {
+    outline: 2px solid var(--lavender);
+    outline-offset: 5px;
+    border-radius: 14px;
+}
+
+.media-poster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: 14px;
+    background: rgba(255, 255, 246, 0.16);
+}
+
+.media-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media-placeholder {
+    color: var(--cream);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.media-title {
+    margin-top: 8px;
+    color: var(--white);
+    font-size: 15px;
+    line-height: 1.3;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+/* Hover Card */
+
+.media-details {
+    position: absolute;
+    left: calc(100% - 16px);
+    bottom: 25px;
+    z-index: 10;
+    width: 255px;
+    max-width: none;
+    padding: 15px;
+    border: none;
+    border-radius: 17px;
+    background: var(--blue);
+    box-shadow: 0 8px 24px rgba(20, 15, 60, 0.30);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.media-entry:hover .media-details,
+.media-entry:focus-within .media-details {
+    opacity: 1;
+    visibility: visible;
+}
+
+.media-entry:nth-child(6n + 5) .media-details,
+.media-entry:nth-child(6n + 6) .media-details {
+    left: auto;
+    right: calc(100% - 16px);
+}
+
+.hover-title {
+    width: 100%;
+    padding: 12px;
+    border-radius: 9px;
+    background: var(--header);
+    color: var(--white);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.hover-status {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--lavender);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.hover-review-label {
+    margin-top: 4px;
+    color: var(--white);
+    font-size: 12px;
+}
+
+.hover-rating-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.hover-stars {
+    display: flex;
+    gap: 4px;
+}
+
+.hover-star {
+    position: relative;
+    display: block;
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
+}
+
+.hover-star > img,
+.hover-star-fill img {
+    display: block;
+    width: 25px;
+    min-width: 25px;
+    height: 25px;
+    object-fit: contain;
+}
+
+.hover-star-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 25px;
+    overflow: hidden;
+}
+
+.hover-rating-value {
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Delete */
+
+.entry-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.delete-entry-btn {
+    margin-right: auto;
+    padding: 12px 24px;
+    border: 1px solid #DCA6CB;
+    border-radius: 22px;
+    background: transparent;
+    color: #F5CCEA;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.delete-entry-btn:hover {
+    background: rgba(220, 166, 203, 0.15);
 }
