@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My List | My Library</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inder&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
+
+    <script src="dashboard.js" defer></script>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <header class="dashboard-header">
+        <a class="brand" href="dashboard.html?category=anime">
+            <img src="assets/logo.png" alt="My List">
+        </a>
+
+        <nav class="main-nav" aria-label="Media categories">
+            <a href="?category=anime" data-category="anime">MY ANIME LIST</a>
+            <a href="?category=series" data-category="series">MY SERIES LIST</a>
+            <a href="?category=movie" data-category="movie">MY MOVIE LIST</a>
+            <a href="?category=book" data-category="book">MY READING LIST</a>
+            <a href="?category=game" data-category="game">MY GAME LIST</a>
+        </nav>
+
+        <button
+            id="logout-btn"
+            class="logout-btn"
+            type="button"
+            aria-label="Log out"
+            title="Log out"
+        >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <path d="M16 17l5-5-5-5"/>
+                <path d="M21 12H9"/>
+            </svg>
+        </button>
+    </header>
+
+    <!-- Library -->
+    <main class="dashboard-main">
+        <h1 id="library-title">MY ANIME LIST</h1>
+
+        <div class="dashboard-toolbar">
+            <!-- Statistics -->
+            <aside class="stats-panel">
+                <div class="stat-item">
+                    <span id="total-label">TOTAL ANIME</span>
+                    <strong id="total-count">0</strong>
+                </div>
+
+                <div class="stat-item">
+                    <span>AVERAGE RATING</span>
+                    <strong id="average-rating">—</strong>
+                </div>
+            </aside>
+
+            <!-- Filters -->
+            <section class="library-controls" aria-label="Library controls">
+                <div class="filters">
+                    <button class="filter-btn active" data-status="all" type="button">
+                        ALL (0)
+                    </button>
+
+                    <button class="filter-btn" data-status="completed" type="button">
+                        COMPLETED (0)
+                    </button>
+
+                    <button class="filter-btn" data-status="incomplete" type="button">
+                        INCOMPLETE (0)
+                    </button>
+
+                    <button class="filter-btn" data-status="dropped" type="button">
+                        DROPPED (0)
+                    </button>
+                </div>
+
+                <div class="search-container">
+                    <input
+                        type="search"
+                        id="search-input"
+                        placeholder="Search anime in my list..."
+                        aria-label="Search my list"
+                    >
+                </div>
+            </section>
+        </div>
+
+        <!-- Entries -->
+        <section class="entries-grid" id="entries-grid" aria-label="My entries">
+            <button class="add-new-card" id="add-new-btn" type="button">
+                <span class="plus-icon">+</span>
+                <span class="add-label">ADD NEW</span>
+            </button>
+        </section>
+
+        <p
+            id="dashboard-message"
+            class="dashboard-message"
+            role="status"
+            aria-live="polite"
+        ></p>
+    </main>
+
+    <!-- Modal -->
+    <dialog id="entry-dialog" class="entry-dialog" aria-label="Add new entry">
+        <button
+            id="close-entry-dialog"
+            class="entry-dialog-close"
+            type="button"
+            aria-label="Close"
+        >×</button>
+
+        <div class="entry-dialog-scroll">
+            <form id="entry-form">
+                <div class="entry-top">
+                    <!-- Photo -->
+                    <label class="entry-photo" for="entry-photo-input">
+                        <input
+                            id="entry-photo-input"
+                            name="photo"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/gif"
+                        >
+
+                        <span class="entry-photo-label">ADD PHOTO</span>
+                        <span class="entry-photo-plus">+</span>
+
+                        <img
+                            id="entry-photo-preview"
+                            class="entry-photo-preview"
+                            alt="Selected cover"
+                            hidden
+                        >
+                    </label>
+
+                    <!-- Details -->
+                    <div class="entry-fields">
+                        <input
+                            class="entry-title"
+                            type="text"
+                            name="title"
+                            placeholder="Name"
+                            aria-label="Name"
+                            maxlength="255"
+                            required
+                        >
+
+                        <label class="entry-field">
+                            <span>Genres:</span>
+                            <input type="text" name="genre" maxlength="100">
+                        </label>
+
+                        <label class="entry-field">
+                            <span id="entry-length-label">Total Episodes:</span>
+                            <input type="number" name="length" min="0" step="1">
+                        </label>
+
+                        <label class="entry-field">
+                            <span>Status:</span>
+                            <select name="status">
+                                <option value="incomplete">INCOMPLETE</option>
+                                <option value="completed">COMPLETED</option>
+                                <option value="dropped">DROPPED</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <label class="entry-description-label" for="entry-description">
+                    Description:
+                </label>
+
+                <textarea
+                    id="entry-description"
+                    name="description"
+                    rows="3"
+                ></textarea>
+
+                <!-- Review -->
+                <div class="entry-review">
+                    <span class="entry-review-heading">My Review:</span>
+
+                    <div class="entry-rating-row">
+                        <div
+                            id="entry-rating-stars"
+                            class="entry-rating-stars"
+                            role="group"
+                            aria-label="Rating from 0.5 to 5 stars"
+                        ></div>
+
+                        <span id="entry-rating-value" class="entry-rating-value">
+                            (0/5)
+                        </span>
+                    </div>
+
+                    <input
+                        id="entry-rating"
+                        name="rating"
+                        type="hidden"
+                        value=""
+                    >
+
+                    <label for="entry-review-text">Text:</label>
+
+                    <textarea
+                        id="entry-review-text"
+                        name="review"
+                        rows="2"
+                    ></textarea>
+                </div>
+
+                <!-- Save -->
+                <div class="entry-actions">
+                    <button type="submit" class="save-entry-btn">
+                        SAVE
+                    </button>
+                </div>
+
+                <p
+                    id="entry-save-message"
+                    class="entry-save-message"
+                    role="status"
+                    aria-live="polite"
+                ></p>
+            </form>
+        </div>
+    </dialog>
+</body>
+</html>

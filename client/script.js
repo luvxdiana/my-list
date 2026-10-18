@@ -67,6 +67,7 @@ loginForm.addEventListener("submit", async (event) => {
         );
 
         loginForm.reset();
+        window.location.href = "/dashboard.html?category=anime";
 
     } catch (error) {
         showMessage(loginMessage, "Cannot connect to server.");
