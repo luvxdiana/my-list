@@ -387,11 +387,11 @@ router.delete("/:id", async (req, res) => {
         }
 
         const photoPath = path.join(
-            __dirname,
-            "..",
-            "uploads",
-            `${entryId}.webp`
-        );
+            process.env.RAILWAY_VOLUME_MOUNT_PATH ||
+        path.join(__dirname, "..", "uploads"),
+    `${entryId}.webp`
+       );
+
 
         console.log("Deleting entry:", entryId);
         console.log("Photo path:", photoPath);
@@ -420,4 +420,3 @@ router.delete("/:id", async (req, res) => {
 });
 
 module.exports = router;
-
