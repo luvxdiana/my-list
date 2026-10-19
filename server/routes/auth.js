@@ -4,11 +4,39 @@ const bcrypt = require("bcryptjs");
 const pool = require("../db");
 const jwt = require("jsonwebtoken");
 const requireAuth = require("../middleware/requireAuth");
+const { rateLimit } = require("express-rate-limit");
 
 const router = express.Router();
 
+
+// Rate Limits
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    skipSuccessfulRequests: true,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: {
+        message: "Too many login attempts. Please try again later."
+    }
+});
+
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: {
+        message: "Too many registration attempts. Please try again later."
+    }
+});
+
+
 // Register a new user
-router.post("/register", async (req, res) => {
+
+router.post("/register", registerLimiter, async (req, res) => {
+
   try {
     const { username, email, password } = req.body;
 
@@ -31,15 +59,15 @@ router.post("/register", async (req, res) => {
         message: "Username must be 2-50 characters"
       });
     }
-
+    
     if (
-      cleanEmail.length > 255 ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
-    ) {
-      return res.status(400).json({
+    cleanEmail.length > 255 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
+) {
+    return res.status(400).json({
         message: "Invalid email address"
-      });
-    }
+    });
+}
 
     if (
       password.length < 10 ||
@@ -85,7 +113,9 @@ router.post("/register", async (req, res) => {
 
 
 /* LOGIN */
-router.post("/login", async (req, res) => {
+
+router.post("/login", loginLimiter, async (req, res) => {
+
   try {
     const { email, password } = req.body ?? {};
 
