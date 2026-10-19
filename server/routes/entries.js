@@ -1,5 +1,7 @@
-
 const express = require("express");
+const fs = require("node:fs/promises");
+const path = require("node:path");
+
 const pool = require("../db");
 const requireAuth = require("../middleware/requireAuth");
 
@@ -356,6 +358,7 @@ router.put("/:id", async (req, res) => {
     }
 });
 
+
 // Delete
 
 router.delete("/:id", async (req, res) => {
@@ -372,7 +375,7 @@ router.delete("/:id", async (req, res) => {
             `
             DELETE FROM entries
             WHERE id = $1 AND user_id = $2
-            RETURNING id
+            RETURNING id, image_url
             `,
             [entryId, req.userId]
         );
@@ -381,6 +384,27 @@ router.delete("/:id", async (req, res) => {
             return res.status(404).json({
                 message: "Entry not found."
             });
+        }
+
+        const photoPath = path.join(
+            __dirname,
+            "..",
+            "uploads",
+            `${entryId}.webp`
+        );
+
+        console.log("Deleting entry:", entryId);
+        console.log("Photo path:", photoPath);
+
+        try {
+            await fs.unlink(photoPath);
+            console.log("Photo deleted successfully:", entryId);
+        } catch (fileError) {
+            if (fileError.code === "ENOENT") {
+                console.log("Photo file not found:", entryId);
+            } else {
+                console.error("Delete photo error:", fileError);
+            }
         }
 
         res.json({
@@ -396,3 +420,4 @@ router.delete("/:id", async (req, res) => {
 });
 
 module.exports = router;
+
