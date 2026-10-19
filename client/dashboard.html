@@ -121,25 +121,40 @@
         <div class="entry-dialog-scroll">
             <form id="entry-form">
                 <div class="entry-top">
+
                     <!-- Photo -->
-                    <label class="entry-photo" for="entry-photo-input">
-                        <input
+                     <div class="entry-photo-box">
+                        <label class="entry-photo" for="entry-photo-input">
+                            <input
                             id="entry-photo-input"
                             name="photo"
                             type="file"
                             accept="image/png,image/jpeg,image/webp,image/gif"
-                        >
-
-                        <span class="entry-photo-label">ADD PHOTO</span>
-                        <span class="entry-photo-plus">+</span>
-
-                        <img
+                            
+                            >
+                            
+                            <span class="entry-photo-label">ADD PHOTO</span>
+                            <span class="entry-photo-plus">+</span>
+                            
+                            <img
                             id="entry-photo-preview"
                             class="entry-photo-preview"
                             alt="Selected cover"
                             hidden
+                            
+                            >
+                        
+                        </label>
+                        
+                        <button
+                        type="button"
+                        id="remove-photo-btn"
+                        class="remove-photo-btn"
+                        hidden
                         >
-                    </label>
+                        REMOVE PHOTO
+                    </button>
+                </div>
 
                     <!-- Details -->
                     <div class="entry-fields">

@@ -400,6 +400,69 @@ body {
     display: none;
 }
 
+
+.entry-photo-box {
+    width: 120px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.remove-photo-btn {
+    padding: 7px 12px;
+    border: 1px solid var(--lavender);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--cream);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.remove-photo-btn:hover {
+    background: var(--lavender);
+    color: var(--white);
+}
+
+.remove-photo-btn[hidden] {
+    display: none;
+}
+
+
+.entry-photo-box {
+    width: 120px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.remove-photo-btn {
+    padding: 7px 12px;
+    border: 1px solid var(--lavender);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--cream);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.remove-photo-btn:hover {
+    background: var(--lavender);
+    color: var(--white);
+}
+
+.remove-photo-btn[hidden] {
+    display: none;
+}
+
+
 /* Details */
 
 .entry-fields {

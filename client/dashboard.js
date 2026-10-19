@@ -1,4 +1,3 @@
-
 // Categories
 
 const categories = {
@@ -62,6 +61,7 @@ const deleteButton = document.getElementById("delete-entry-btn");
 const saveMessage = document.getElementById("entry-save-message");
 
 const photoInput = document.getElementById("entry-photo-input");
+const removePhotoButton = document.getElementById("remove-photo-btn");
 const photoPreview = document.getElementById("entry-photo-preview");
 const photoLabel = photoInput.closest(".entry-photo");
 
@@ -78,6 +78,7 @@ let selectedStatus = "all";
 let selectedRating = 0;
 let editingEntryId = null;
 let photoUrl = null;
+let removePhotoRequested = false;
 
 // Navigation
 
@@ -176,6 +177,9 @@ function clearPhoto() {
     photoPreview.hidden = true;
     photoPreview.removeAttribute("src");
     photoLabel.classList.remove("has-image");
+
+    removePhotoButton.hidden = true;
+    removePhotoRequested = false;
 }
 
 photoInput.addEventListener("change", () => {
@@ -210,6 +214,8 @@ photoInput.addEventListener("change", () => {
     photoPreview.src = photoUrl;
     photoPreview.hidden = false;
     photoLabel.classList.add("has-image");
+    removePhotoButton.hidden = false;
+    removePhotoRequested = false;
 
     saveMessage.textContent = "";
 });
@@ -218,6 +224,18 @@ photoPreview.addEventListener("error", () => {
     photoPreview.hidden = true;
     photoLabel.classList.remove("has-image");
     saveMessage.textContent = "Could not preview the photo.";
+});
+
+removePhotoButton.addEventListener("click", () => {
+    const existingEntry = savedEntries.find(entry => {
+        return String(entry.id) === String(editingEntryId);
+    });
+
+    const hasStoredPhoto = Boolean(existingEntry?.image_url);
+
+    clearPhoto();
+    removePhotoRequested = hasStoredPhoto;
+    saveMessage.textContent = "";
 });
 
 // Rating
@@ -353,6 +371,7 @@ function openEditEntry(entry) {
         photoPreview.src = entry.image_url;
         photoPreview.hidden = false;
         photoLabel.classList.add("has-image");
+        removePhotoButton.hidden = false;
     }
 
     deleteButton.hidden = false;
@@ -672,6 +691,24 @@ entryForm.addEventListener("submit", async event => {
                     photoResult.message || "Could not upload photo."
                 );
             }
+        } else if (removePhotoRequested && isEditing) {
+            saveButton.textContent = "REMOVING PHOTO...";
+
+            const photoResponse = await fetch(
+                `/api/entries/${encodeURIComponent(savedEntryId)}/photo`,
+                {
+                    method: "DELETE",
+                    credentials: "same-origin"
+                }
+            );
+
+            const photoResult = await photoResponse.json();
+
+            if (!photoResponse.ok) {
+                throw new Error(
+                    photoResult.message || "Could not remove photo."
+                );
+            }
         }
 
         entryDialog.close();
@@ -695,7 +732,7 @@ entryForm.addEventListener("submit", async event => {
             deleteButton.hidden = false;
 
             saveMessage.textContent =
-                `Entry saved, but the photo could not be uploaded: ${error.message}`;
+                `Entry saved, but the photo change failed: ${error.message}`;
 
             try {
                 await loadEntries();
