@@ -1,42 +1,49 @@
-
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const pool = require("../db");
 const jwt = require("jsonwebtoken");
 const requireAuth = require("../middleware/requireAuth");
-const { rateLimit } = require("express-rate-limit");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 
 const router = express.Router();
 
+// Client IP
+
+function getClientKey(req) {
+  const railwayIp =
+    process.env.NODE_ENV === "production" ? req.get("X-Real-IP") : null;
+
+  return ipKeyGenerator(railwayIp || req.ip || req.socket.remoteAddress);
+}
 
 // Rate Limits
 
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 10,
-    skipSuccessfulRequests: true,
-    standardHeaders: "draft-7",
-    legacyHeaders: false,
-    message: {
-        message: "Too many login attempts. Please try again later."
-    }
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  keyGenerator: getClientKey,
+  skipSuccessfulRequests: true,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    message: "Too many login attempts. Please try again later.",
+  },
 });
 
 const registerLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    limit: 5,
-    standardHeaders: "draft-7",
-    legacyHeaders: false,
-    message: {
-        message: "Too many registration attempts. Please try again later."
-    }
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  keyGenerator: getClientKey,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    message: "Too many registration attempts. Please try again later.",
+  },
 });
-
 
 // Register a new user
 
 router.post("/register", registerLimiter, async (req, res) => {
-
   try {
     const { username, email, password } = req.body;
 
@@ -47,7 +54,7 @@ router.post("/register", registerLimiter, async (req, res) => {
       typeof password !== "string"
     ) {
       return res.status(400).json({
-        message: "Username, email and password are required"
+        message: "Username, email and password are required",
       });
     }
 
@@ -56,25 +63,22 @@ router.post("/register", registerLimiter, async (req, res) => {
 
     if (cleanUsername.length < 2 || cleanUsername.length > 50) {
       return res.status(400).json({
-        message: "Username must be 2-50 characters"
+        message: "Username must be 2-50 characters",
       });
     }
-    
-    if (
-    cleanEmail.length > 255 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
-) {
-    return res.status(400).json({
-        message: "Invalid email address"
-    });
-}
 
     if (
-      password.length < 10 ||
-      Buffer.byteLength(password, "utf8") > 72
+      cleanEmail.length > 255 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
     ) {
       return res.status(400).json({
-        message: "Password must be at least 10 characters and at most 72 bytes"
+        message: "Invalid email address",
+      });
+    }
+
+    if (password.length < 10 || Buffer.byteLength(password, "utf8") > 72) {
+      return res.status(400).json({
+        message: "Password must be at least 10 characters and at most 72 bytes",
       });
     }
 
@@ -86,36 +90,33 @@ router.post("/register", registerLimiter, async (req, res) => {
       `INSERT INTO users (username, email, password_hash)
        VALUES ($1, $2, $3)
        RETURNING id, username, email, created_at`,
-      [cleanUsername, cleanEmail, passwordHash]
+      [cleanUsername, cleanEmail, passwordHash],
     );
 
     // Send success response
     return res.status(201).json({
       message: "User registered successfully!",
-      user: result.rows[0]
+      user: result.rows[0],
     });
-
   } catch (error) {
     // PostgreSQL unique constraint violation
     if (error.code === "23505") {
       return res.status(409).json({
-        message: "Email already registered"
+        message: "Email already registered",
       });
     }
 
     console.error("Registration error:", error);
 
     return res.status(500).json({
-      message: "Internal server error"
+      message: "Internal server error",
     });
   }
 });
 
-
 /* LOGIN */
 
 router.post("/login", loginLimiter, async (req, res) => {
-
   try {
     const { email, password } = req.body ?? {};
 
@@ -127,7 +128,7 @@ router.post("/login", loginLimiter, async (req, res) => {
       !password
     ) {
       return res.status(400).json({
-        message: "Email and password are required"
+        message: "Email and password are required",
       });
     }
 
@@ -136,35 +137,31 @@ router.post("/login", loginLimiter, async (req, res) => {
       `SELECT id, username, email, password_hash
        FROM users
        WHERE email = $1`,
-      [email.trim().toLowerCase()]
+      [email.trim().toLowerCase()],
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({
-        message: "Invalid email or password"
+        message: "Invalid email or password",
       });
     }
 
     const user = result.rows[0];
 
     // Check password
-    const validPassword = await bcrypt.compare(
-      password,
-      user.password_hash
-    );
+    const validPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!validPassword) {
       return res.status(401).json({
-        message: "Invalid email or password"
+        message: "Invalid email or password",
       });
     }
 
     // Create signed session token
-    const token = jwt.sign(
-      { sub: String(user.id) },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d", algorithm: "HS256" }
-    );
+    const token = jwt.sign({ sub: String(user.id) }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+      algorithm: "HS256",
+    });
 
     // Save token in an HttpOnly cookie
     res.cookie("mylist_session", token, {
@@ -172,7 +169,7 @@ router.post("/login", loginLimiter, async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: "/"
+      path: "/",
     });
 
     return res.status(200).json({
@@ -180,19 +177,17 @@ router.post("/login", loginLimiter, async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
-
   } catch (error) {
     console.error("Login error:", error);
 
     return res.status(500).json({
-      message: "Internal server error"
+      message: "Internal server error",
     });
   }
 });
-
 
 /* GET CURRENT USER */
 router.get("/me", requireAuth, async (req, res) => {
@@ -201,28 +196,26 @@ router.get("/me", requireAuth, async (req, res) => {
       `SELECT id, username, email
        FROM users
        WHERE id = $1`,
-      [req.userId]
+      [req.userId],
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({
-        message: "User not found"
+        message: "User not found",
       });
     }
 
     return res.status(200).json({
-      user: result.rows[0]
+      user: result.rows[0],
     });
-
   } catch (error) {
     console.error("Get user error:", error);
 
     return res.status(500).json({
-      message: "Internal server error"
+      message: "Internal server error",
     });
   }
 });
-
 
 /* LOGOUT */
 router.post("/logout", (req, res) => {
@@ -230,11 +223,11 @@ router.post("/logout", (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/"
+    path: "/",
   });
 
   return res.status(200).json({
-    message: "Logged out successfully!"
+    message: "Logged out successfully!",
   });
 });
 
