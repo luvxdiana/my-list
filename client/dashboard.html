@@ -1,262 +1,484 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My List | My Library</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inder&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inder&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="compass.css" />
 
     <script src="dashboard.js" defer></script>
-</head>
+    <script src="compass.js" defer></script>
+  </head>
 
-<body>
+  <body>
     <!-- Navigation -->
     <header class="dashboard-header">
-        <a class="brand" href="dashboard.html?category=anime">
-            <img src="assets/logo.png" alt="My List">
-        </a>
+      <a class="brand" href="dashboard.html?category=anime">
+        <img src="assets/logo.png" alt="My List" />
+      </a>
 
-        <nav class="main-nav" aria-label="Media categories">
-            <a href="?category=anime" data-category="anime">MY ANIME LIST</a>
-            <a href="?category=series" data-category="series">MY SERIES LIST</a>
-            <a href="?category=movie" data-category="movie">MY MOVIE LIST</a>
-            <a href="?category=book" data-category="book">MY READING LIST</a>
-            <a href="?category=game" data-category="game">MY GAME LIST</a>
-        </nav>
+      <nav class="main-nav" aria-label="Media categories">
+        <a href="?category=anime" data-category="anime">MY ANIME LIST</a>
+        <a href="?category=series" data-category="series">MY SERIES LIST</a>
+        <a href="?category=movie" data-category="movie">MY MOVIE LIST</a>
+        <a href="?category=book" data-category="book">MY READING LIST</a>
+        <a href="?category=game" data-category="game">MY GAME LIST</a>
+      </nav>
 
-        <button
-            id="logout-btn"
-            class="logout-btn"
-            type="button"
-            aria-label="Log out"
-            title="Log out"
-        >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <path d="M16 17l5-5-5-5"/>
-                <path d="M21 12H9"/>
-            </svg>
-        </button>
+      <button
+        id="logout-btn"
+        class="logout-btn"
+        type="button"
+        aria-label="Log out"
+        title="Log out"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <path d="M16 17l5-5-5-5" />
+          <path d="M21 12H9" />
+        </svg>
+      </button>
     </header>
 
     <!-- Library -->
     <main class="dashboard-main">
-        <h1 id="library-title">MY ANIME LIST</h1>
+      <h1 id="library-title">MY ANIME LIST</h1>
 
-        <div class="dashboard-toolbar">
-            <!-- Statistics -->
-            <aside class="stats-panel">
-                <div class="stat-item">
-                    <span id="total-label">TOTAL ANIME</span>
-                    <strong id="total-count">0</strong>
-                </div>
+      <div class="dashboard-toolbar">
+        <!-- Statistics -->
+        <aside class="stats-panel">
+          <div class="stat-item">
+            <span id="total-label">TOTAL ANIME</span>
+            <strong id="total-count">0</strong>
+          </div>
 
-                <div class="stat-item">
-                    <span>AVERAGE RATING</span>
-                    <strong id="average-rating">—</strong>
-                </div>
-            </aside>
+          <div class="stat-item">
+            <span>AVERAGE RATING</span>
+            <strong id="average-rating">—</strong>
+          </div>
+        </aside>
 
-            <!-- Filters -->
-            <section class="library-controls" aria-label="Library controls">
-                <div class="filters">
-                    <button class="filter-btn active" data-status="all" type="button">
-                        ALL (0)
-                    </button>
-
-                    <button class="filter-btn" data-status="completed" type="button">
-                        COMPLETED (0)
-                    </button>
-
-                    <button class="filter-btn" data-status="incomplete" type="button">
-                        INCOMPLETE (0)
-                    </button>
-
-                    <button class="filter-btn" data-status="dropped" type="button">
-                        DROPPED (0)
-                    </button>
-                </div>
-
-                <div class="search-container">
-                    <input
-                        type="search"
-                        id="search-input"
-                        placeholder="Search anime in my list..."
-                        aria-label="Search my list"
-                    >
-                </div>
-            </section>
-        </div>
-
-        <!-- Entries -->
-        <section class="entries-grid" id="entries-grid" aria-label="My entries">
-            <button class="add-new-card" id="add-new-btn" type="button">
-                <span class="plus-icon">+</span>
-                <span class="add-label">ADD NEW</span>
+        <!-- Filters -->
+        <section class="library-controls" aria-label="Library controls">
+          <div class="filters">
+            <button class="filter-btn active" data-status="all" type="button">
+              ALL (0)
             </button>
-        </section>
 
-        <p
-            id="dashboard-message"
-            class="dashboard-message"
-            role="status"
-            aria-live="polite"
-        ></p>
+            <button class="filter-btn" data-status="completed" type="button">
+              COMPLETED (0)
+            </button>
+
+            <button class="filter-btn" data-status="incomplete" type="button">
+              INCOMPLETE (0)
+            </button>
+
+            <button class="filter-btn" data-status="dropped" type="button">
+              DROPPED (0)
+            </button>
+          </div>
+
+          <div class="search-container">
+            <input
+              type="search"
+              id="search-input"
+              placeholder="Search anime in my list..."
+              aria-label="Search my list"
+            />
+          </div>
+        </section>
+      </div>
+
+      <!-- Entries -->
+      <section class="entries-grid" id="entries-grid" aria-label="My entries">
+        <button class="add-new-card" id="add-new-btn" type="button">
+          <span class="plus-icon">+</span>
+          <span class="add-label">ADD NEW</span>
+        </button>
+      </section>
+
+      <p
+        id="dashboard-message"
+        class="dashboard-message"
+        role="status"
+        aria-live="polite"
+      ></p>
     </main>
 
-    <!-- Modal -->
+    <!-- Compass Button -->
+    <div class="compass-launcher">
+      <button
+        id="open-compass-btn"
+        class="compass-launch-btn"
+        type="button"
+        aria-label="Open MyList Compass"
+        title="MyList Compass"
+      >
+        <img src="assets/compass-icon.png" alt="" class="compass-mascot" />
+        <span class="compass-icon-fallback" aria-hidden="true" hidden>✦</span>
+      </button>
+    </div>
+
+    <!-- Compass Modal -->
+    <dialog
+      id="compass-dialog"
+      class="compass-dialog"
+      aria-labelledby="compass-title"
+    >
+      <button
+        id="close-compass-btn"
+        class="compass-close-btn"
+        type="button"
+        aria-label="Close Compass"
+      >
+        ×
+      </button>
+
+      <div class="compass-dialog-scroll">
+        <div class="compass-header">
+          <span class="compass-kicker">YOUR PERSONAL GUIDE</span>
+
+          <h2 id="compass-title">MYLIST <span>COMPASS ✦</span></h2>
+
+          <p class="compass-intro">
+            Tell us how you feel, and let your Compass guide you toward your
+            next story.
+          </p>
+        </div>
+
+        <form id="compass-form">
+          <!-- Current Mood -->
+          <fieldset class="compass-group">
+            <legend>
+              <span class="compass-number">01.</span>
+              How are you feeling right now?
+            </legend>
+
+            <div class="compass-options">
+              <label class="compass-option">
+                <input
+                  type="radio"
+                  name="current_mood"
+                  value="happy"
+                  required
+                />
+                <span>😊 Happy</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="current_mood" value="sad" />
+                <span>😢 Sad</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="current_mood" value="anxious" />
+                <span>😰 Anxious</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="current_mood" value="calm" />
+                <span>😌 Calm</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="current_mood" value="tired" />
+                <span>😴 Tired</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="current_mood" value="excited" />
+                <span>🤩 Excited</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Desired Emotion -->
+          <fieldset class="compass-group">
+            <legend>
+              <span class="compass-number">02.</span>
+              How would you like to feel?
+            </legend>
+
+            <div class="compass-options">
+              <label class="compass-option">
+                <input
+                  type="radio"
+                  name="desired_emotion"
+                  value="joy"
+                  required
+                />
+                <span>✨ Joy</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="desired_emotion" value="comfort" />
+                <span>💜 Comfort</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="desired_emotion" value="calm" />
+                <span>🌙 Peace</span>
+              </label>
+
+              <label class="compass-option">
+                <input
+                  type="radio"
+                  name="desired_emotion"
+                  value="inspiration"
+                />
+                <span>🌟 Inspiration</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="desired_emotion" value="thrill" />
+                <span>⚡ Excitement</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="desired_emotion" value="energy" />
+                <span>🔥 Energy</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Available Time -->
+          <fieldset class="compass-group">
+            <legend>
+              <span class="compass-number">03.</span>
+              How much time do you have?
+            </legend>
+
+            <div class="compass-options">
+              <label class="compass-option">
+                <input type="radio" name="available_time" value="30" required />
+                <span>30 min</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="available_time" value="60" />
+                <span>1 hour</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="available_time" value="90" />
+                <span>1.5 hours</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="available_time" value="120" />
+                <span>2 hours</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="available_time" value="180plus" />
+                <span>3+ hours</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Content Type -->
+          <fieldset class="compass-group">
+            <legend>
+              <span class="compass-number">04.</span>
+              What would you like to watch?
+            </legend>
+
+            <div class="compass-options">
+              <label class="compass-option">
+                <input
+                  type="radio"
+                  name="content_type"
+                  value="movie"
+                  required
+                />
+                <span>🎬 Movie</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="content_type" value="series" />
+                <span>📺 Series</span>
+              </label>
+
+              <label class="compass-option">
+                <input type="radio" name="content_type" value="either" />
+                <span>💫 Surprise me</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Search -->
+          <button class="compass-submit-btn" type="submit">
+            SEARCH <span aria-hidden="true">→</span>
+          </button>
+
+          <p class="compass-privacy-note">
+            Your answers are not saved during this preview.
+          </p>
+
+          <!-- Preview -->
+          <section
+            id="compass-preview"
+            class="compass-preview"
+            aria-live="polite"
+            hidden
+          >
+            <h3>Your Compass request ✦</h3>
+
+            <p id="compass-preview-text"></p>
+
+            <p class="compass-preview-note">
+              Personalized recommendations will appear here when the
+              recommendation engine is connected.
+            </p>
+          </section>
+        </form>
+      </div>
+    </dialog>
+
+    <!-- Entry Modal -->
     <dialog id="entry-dialog" class="entry-dialog" aria-label="Add new entry">
-        <button
-            id="close-entry-dialog"
-            class="entry-dialog-close"
-            type="button"
-            aria-label="Close"
-        >×</button>
+      <button
+        id="close-entry-dialog"
+        class="entry-dialog-close"
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
 
-        <div class="entry-dialog-scroll">
-            <form id="entry-form">
-                <div class="entry-top">
+      <div class="entry-dialog-scroll">
+        <form id="entry-form">
+          <div class="entry-top">
+            <!-- Photo -->
+            <div class="entry-photo-box">
+              <label class="entry-photo" for="entry-photo-input">
+                <input
+                  id="entry-photo-input"
+                  name="photo"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                />
 
-                    <!-- Photo -->
-                     <div class="entry-photo-box">
-                        <label class="entry-photo" for="entry-photo-input">
-                            <input
-                            id="entry-photo-input"
-                            name="photo"
-                            type="file"
-                            accept="image/png,image/jpeg,image/webp,image/gif"
-                            
-                            >
-                            
-                            <span class="entry-photo-label">ADD PHOTO</span>
-                            <span class="entry-photo-plus">+</span>
-                            
-                            <img
-                            id="entry-photo-preview"
-                            class="entry-photo-preview"
-                            alt="Selected cover"
-                            hidden
-                            
-                            >
-                        
-                        </label>
-                        
-                        <button
-                        type="button"
-                        id="remove-photo-btn"
-                        class="remove-photo-btn"
-                        hidden
-                        >
-                        REMOVE PHOTO
-                    </button>
-                </div>
+                <span class="entry-photo-label">ADD PHOTO</span>
+                <span class="entry-photo-plus">+</span>
 
-                    <!-- Details -->
-                    <div class="entry-fields">
-                        <input
-                            class="entry-title"
-                            type="text"
-                            name="title"
-                            placeholder="Name"
-                            aria-label="Name"
-                            maxlength="255"
-                            required
-                        >
+                <img
+                  id="entry-photo-preview"
+                  class="entry-photo-preview"
+                  alt="Selected cover"
+                  hidden
+                />
+              </label>
 
-                        <label class="entry-field">
-                            <span>Genres:</span>
-                            <input type="text" name="genre" maxlength="100">
-                        </label>
-
-                        <label class="entry-field">
-                            <span id="entry-length-label">Total Episodes:</span>
-                            <input type="number" name="length" min="0" step="1">
-                        </label>
-
-                        <label class="entry-field">
-                            <span>Status:</span>
-                            <select name="status">
-                                <option value="incomplete">INCOMPLETE</option>
-                                <option value="completed">COMPLETED</option>
-                                <option value="dropped">DROPPED</option>
-                            </select>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Description -->
-                <label class="entry-description-label" for="entry-description">
-                    Description:
-                </label>
-
-                <textarea
-                    id="entry-description"
-                    name="description"
-                    rows="3"
-                ></textarea>
-
-                <!-- Review -->
-                <div class="entry-review">
-                    <span class="entry-review-heading">My Review:</span>
-
-                    <div class="entry-rating-row">
-                        <div
-                            id="entry-rating-stars"
-                            class="entry-rating-stars"
-                            role="group"
-                            aria-label="Rating from 0.5 to 5 stars"
-                        ></div>
-
-                        <span id="entry-rating-value" class="entry-rating-value">
-                            (0/5)
-                        </span>
-                    </div>
-
-                    <input
-                        id="entry-rating"
-                        name="rating"
-                        type="hidden"
-                        value=""
-                    >
-
-                    <label for="entry-review-text">Text:</label>
-
-                    <textarea
-                        id="entry-review-text"
-                        name="review"
-                        rows="2"
-                    ></textarea>
-                </div>
-
-                <!-- Save -->
-                <div class="entry-actions">
-                    <button
-                    type="button"
-                    id="delete-entry-btn"
-                    class="delete-entry-btn"
-                    hidden
-                    >
-                    DELETE
-                </button>
-                <button type="submit" class="save-entry-btn">
-                    SAVE
-                </button>
+              <button
+                type="button"
+                id="remove-photo-btn"
+                class="remove-photo-btn"
+                hidden
+              >
+                REMOVE PHOTO
+              </button>
             </div>
 
+            <!-- Details -->
+            <div class="entry-fields">
+              <input
+                class="entry-title"
+                type="text"
+                name="title"
+                placeholder="Name"
+                aria-label="Name"
+                maxlength="255"
+                required
+              />
 
-                <p
-                    id="entry-save-message"
-                    class="entry-save-message"
-                    role="status"
-                    aria-live="polite"
-                ></p>
-            </form>
-        </div>
+              <label class="entry-field">
+                <span>Genres:</span>
+                <input type="text" name="genre" maxlength="100" />
+              </label>
+
+              <label class="entry-field">
+                <span id="entry-length-label">Total Episodes:</span>
+                <input type="number" name="length" min="0" step="1" />
+              </label>
+
+              <label class="entry-field">
+                <span>Status:</span>
+                <select name="status">
+                  <option value="incomplete">INCOMPLETE</option>
+                  <option value="completed">COMPLETED</option>
+                  <option value="dropped">DROPPED</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <label class="entry-description-label" for="entry-description">
+            Description:
+          </label>
+
+          <textarea
+            id="entry-description"
+            name="description"
+            rows="3"
+          ></textarea>
+
+          <!-- Review -->
+          <div class="entry-review">
+            <span class="entry-review-heading">My Review:</span>
+
+            <div class="entry-rating-row">
+              <div
+                id="entry-rating-stars"
+                class="entry-rating-stars"
+                role="group"
+                aria-label="Rating from 0.5 to 5 stars"
+              ></div>
+
+              <span id="entry-rating-value" class="entry-rating-value">
+                (0/5)
+              </span>
+            </div>
+
+            <input id="entry-rating" name="rating" type="hidden" value="" />
+
+            <label for="entry-review-text">Text:</label>
+
+            <textarea id="entry-review-text" name="review" rows="2"></textarea>
+          </div>
+
+          <!-- Save -->
+          <div class="entry-actions">
+            <button
+              type="button"
+              id="delete-entry-btn"
+              class="delete-entry-btn"
+              hidden
+            >
+              DELETE
+            </button>
+
+            <button type="submit" class="save-entry-btn">SAVE</button>
+          </div>
+
+          <p
+            id="entry-save-message"
+            class="entry-save-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </form>
+      </div>
     </dialog>
-</body>
+  </body>
 </html>
