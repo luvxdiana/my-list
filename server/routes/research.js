@@ -6,6 +6,7 @@ const requireAuth = require("../middleware/requireAuth");
 
 const {
   validateResearchAnnotation,
+  EMOTION_CODES,
 } = require("../services/validateResearchAnnotation");
 
 const router = express.Router();
@@ -196,6 +197,215 @@ router.post("/annotations/preview-check", requireAuth, (req, res) => {
     preview_only: true,
     saved: false,
   });
+});
+
+// Test Annotation Save
+
+router.post("/annotations/test-save", requireAuth, async (req, res) => {
+  res.set("Cache-Control", "no-store");
+
+  // Test Mode
+
+  if (
+    process.env.NODE_ENV !== "development" ||
+    process.env.RESEARCH_TEST_WRITES_ENABLED !== "true"
+  ) {
+    return res.status(404).json({
+      message: "Not found.",
+    });
+  }
+
+  // Validation
+
+  const validation = validateResearchAnnotation(req.body);
+
+  if (!validation.valid) {
+    return res.status(400).json({
+      valid: false,
+      errors: validation.errors,
+      saved: false,
+    });
+  }
+
+  let client;
+  let transactionStarted = false;
+
+  try {
+    client = await pool.connect();
+
+    await client.query("BEGIN");
+    transactionStarted = true;
+
+    // Test Participant
+
+    const participantResult = await client.query(
+      `
+                SELECT id
+                FROM public.research_annotators
+                WHERE user_id = $1
+                  AND annotator_code = 'TEST002'
+                  AND status = 'invited'
+                  AND consented_at IS NULL
+                  AND withdrawn_at IS NULL
+                FOR UPDATE
+                `,
+      [req.userId],
+    );
+
+    if (participantResult.rowCount !== 1) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+
+      return res.status(403).json({
+        message: "Test annotation access denied.",
+        saved: false,
+      });
+    }
+
+    const annotatorId = participantResult.rows[0].id;
+
+    // Media
+
+    const mediaResult = await client.query(
+      `
+                SELECT id
+                FROM public.media_catalog
+                WHERE id = $1
+                  AND category IN ('movie', 'series')
+                `,
+      [req.body.media_id],
+    );
+
+    if (mediaResult.rowCount !== 1) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+
+      return res.status(404).json({
+        message: "Media item not found.",
+        saved: false,
+      });
+    }
+
+    // Duplicate Check
+
+    const existingResult = await client.query(
+      `
+                SELECT id
+                FROM public.research_test_annotation_batches
+                WHERE annotator_id = $1
+                  AND media_id = $2
+                LIMIT 1
+                `,
+      [annotatorId, req.body.media_id],
+    );
+
+    if (existingResult.rowCount > 0) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+
+      return res.status(409).json({
+        message: "This test participant has already " + "annotated this title.",
+        saved: false,
+      });
+    }
+
+    // Emotion IDs
+
+    const emotionsResult = await client.query(
+      `
+                SELECT id, code
+                FROM public.emotions
+                WHERE code = ANY($1::text[])
+                `,
+      [EMOTION_CODES],
+    );
+
+    if (emotionsResult.rows.length !== EMOTION_CODES.length) {
+      throw new Error("Required emotional categories are missing.");
+    }
+
+    const emotionIds = new Map(
+      emotionsResult.rows.map((emotion) => [emotion.code, emotion.id]),
+    );
+
+    // Annotation Batch
+
+    const batchResult = await client.query(
+      `
+                INSERT INTO public.research_test_annotation_batches (
+                    annotator_id,
+                    media_id,
+                    evidence_source,
+                    annotation_note,
+                    is_test_data
+                )
+                VALUES ($1, $2, $3, $4, TRUE)
+                RETURNING id
+                `,
+      [
+        annotatorId,
+        req.body.media_id,
+        req.body.evidence_source,
+        req.body.annotation_note || null,
+      ],
+    );
+
+    const batchId = batchResult.rows[0].id;
+
+    // Emotional Ratings
+
+    for (const rating of req.body.ratings) {
+      await client.query(
+        `
+                    INSERT INTO public.research_test_annotation_ratings (
+                        batch_id,
+                        emotion_id,
+                        intensity,
+                        confidence
+                    )
+                    VALUES ($1, $2, $3, $4)
+                    `,
+        [
+          batchId,
+          emotionIds.get(rating.emotion_code),
+          rating.intensity,
+          rating.confidence,
+        ],
+      );
+    }
+
+    // Commit
+
+    await client.query("COMMIT");
+    transactionStarted = false;
+
+    return res.status(201).json({
+      message: "Test annotation saved successfully.",
+      saved: true,
+      test_only: true,
+      batch_id: batchId,
+      ratings_saved: req.body.ratings.length,
+    });
+  } catch (error) {
+    if (transactionStarted && client) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("Research rollback error:", rollbackError);
+      }
+    }
+
+    console.error("Research test annotation error:", error);
+
+    return res.status(500).json({
+      message: "Unable to save test annotation.",
+      saved: false,
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
 });
 
 module.exports = router;
