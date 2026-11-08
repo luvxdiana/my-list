@@ -16,14 +16,14 @@
   <body>
     <main class="research-page">
       <header class="research-header">
-        <a href="dashboard.html" class="back-link"> ← Back to My List </a>
+        <a href="dashboard.html" class="back-link">← Back to My List</a>
 
         <div class="research-brand">
           <span class="brand-star">✦</span>
           MYLIST COMPASS
         </div>
 
-        <span class="research-badge"> RESEARCH PREVIEW </span>
+        <span class="research-badge">RESEARCH PREVIEW</span>
       </header>
 
       <section class="research-intro">
@@ -44,8 +44,9 @@
 
       <div class="preview-notice" role="note">
         <strong>Preview mode.</strong>
-        This page does not send or save your answers. Research participation and
-        consent are not yet enabled.
+        Your answers are sent to the server for validation but are not saved as
+        research annotations. Research participation and formal consent are not
+        yet enabled.
       </div>
 
       <!-- Research Information -->
@@ -76,14 +77,28 @@
         <h3>What would you do?</h3>
 
         <p>
-          Participants would select a movie or series and evaluate six emotional
-          characteristics: Joy, Comfort, Peace, Inspiration, Excitement, and
-          Energy.
+          Participants would select a movie or series they are familiar with and
+          evaluate six emotional characteristics: Joy, Comfort, Peace,
+          Inspiration, Excitement, and Energy.
         </p>
 
         <p>
           Each characteristic is evaluated using an intensity scale from 0 to 3
           and a confidence scale from 1 to 3.
+        </p>
+
+        <h3>Do you need to watch every movie?</h3>
+
+        <p>
+          No. Participants would only evaluate titles they are familiar with.
+          There is no requirement to watch unfamiliar movies or television
+          series.
+        </p>
+
+        <p>
+          Assessments based on watching a title and expectations based on a
+          trailer or synopsis represent different kinds of evidence. These
+          sources would be distinguished during research analysis.
         </p>
 
         <h3>What information would be collected?</h3>
@@ -106,6 +121,11 @@
           recommendation algorithms.
         </p>
 
+        <p>
+          Evaluations based on full viewing would be distinguished from
+          predictions based on trailers or descriptions.
+        </p>
+
         <h3>Is participation voluntary?</h3>
 
         <p>
@@ -122,8 +142,8 @@
           <strong>Important:</strong>
           This is draft research information. Research contacts, data retention,
           withdrawal procedures, and final participation terms must be confirmed
-          before inviting real participants. No research consent is collected
-          here.
+          before inviting real participants. No formal research consent is
+          collected here.
         </div>
 
         <div class="form-group">
@@ -164,11 +184,16 @@
           </div>
 
           <div class="form-group">
-            <label for="media-title"> Movie or series </label>
+            <label for="media-title">Movie or series</label>
 
             <select id="media-title" name="media_id" required>
               <option value="">Select a title</option>
             </select>
+
+            <p class="field-hint">
+              Choose a title you know. If none of the available titles are
+              familiar, you do not need to complete this form.
+            </p>
           </div>
 
           <div class="form-group">
@@ -188,8 +213,10 @@
           </div>
 
           <p class="field-hint">
-            If you have not watched the full title, evaluate the expected
-            emotional effect rather than a personal viewing experience.
+            If you watched the title, rate your assessment of its emotional
+            characteristics. If you only saw a trailer or read a synopsis, rate
+            what you expect from that information. Do not present an expectation
+            as a personal viewing experience.
           </p>
         </section>
 
@@ -242,6 +269,11 @@
               maxlength="2000"
               placeholder="Share your thoughts about the emotional experience..."
             ></textarea>
+
+            <p class="field-hint">
+              Please do not include names, contact details, or other personal
+              information in your notes.
+            </p>
           </div>
         </section>
 

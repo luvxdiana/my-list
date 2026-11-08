@@ -181,23 +181,70 @@ router.post("/preview-withdraw", requireAuth, async (req, res) => {
 
 // Annotation Preview Validation
 
-router.post("/annotations/preview-check", requireAuth, (req, res) => {
+router.post("/annotations/preview-check", requireAuth, async (req, res) => {
+  res.set("Cache-Control", "no-store");
+
   if (process.env.NODE_ENV !== "development") {
     return res.status(404).json({
       message: "Not found.",
     });
   }
 
-  const result = validateResearchAnnotation(req.body);
+  try {
+    // Research Preview Access
 
-  res.set("Cache-Control", "no-store");
+    const accessResult = await pool.query(
+      `
+      SELECT
+        status,
+        consent_version,
+        consented_at,
+        withdrawn_at
+      FROM public.research_annotators
+      WHERE user_id = $1
+      LIMIT 1
+      `,
+      [req.userId],
+    );
 
-  return res.status(result.valid ? 200 : 400).json({
-    valid: result.valid,
-    errors: result.errors,
-    preview_only: true,
-    saved: false,
-  });
+    const participant = accessResult.rows[0] || null;
+
+    const allowed = Boolean(
+      participant &&
+      !participant.withdrawn_at &&
+      (participant.status === "invited" ||
+        (participant.status === "active" &&
+          participant.consent_version === PREVIEW_VERSION &&
+          participant.consented_at)),
+    );
+
+    if (!allowed) {
+      return res.status(403).json({
+        message: "Research preview access denied.",
+        preview_only: true,
+        saved: false,
+      });
+    }
+
+    // Annotation Validation
+
+    const result = validateResearchAnnotation(req.body);
+
+    return res.status(result.valid ? 200 : 400).json({
+      valid: result.valid,
+      errors: result.errors,
+      preview_only: true,
+      saved: false,
+    });
+  } catch (error) {
+    console.error("Research preview validation error:", error);
+
+    return res.status(500).json({
+      message: "Unable to validate annotation preview.",
+      preview_only: true,
+      saved: false,
+    });
+  }
 });
 
 // Test Annotation Save
