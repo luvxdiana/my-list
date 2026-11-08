@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <title>Emotional Research | MyList Compass</title>
+
+    <link rel="stylesheet" href="annotation.css" />
+    <script src="annotation.js" defer></script>
+  </head>
+
+  <body>
+    <main class="research-page">
+      <header class="research-header">
+        <a href="dashboard.html" class="back-link"> ← Back to My List </a>
+
+        <div class="research-brand">
+          <span class="brand-star">✦</span>
+          MYLIST COMPASS
+        </div>
+
+        <span class="research-badge"> RESEARCH PREVIEW </span>
+      </header>
+
+      <section class="research-intro">
+        <div class="intro-star">✦</div>
+
+        <p class="eyebrow">EMOTIONAL ANNOTATION STUDY</p>
+
+        <h1>
+          Every story makes us
+          <span>feel something.</span>
+        </h1>
+
+        <p class="intro-description">
+          Help us understand the emotional experiences associated with movies
+          and television series.
+        </p>
+      </section>
+
+      <div class="preview-notice" role="note">
+        <strong>Preview mode.</strong>
+        This page does not send or save your answers. Research participation and
+        consent will be implemented separately.
+      </div>
+
+      <form id="annotation-form">
+        <section class="research-panel">
+          <div class="section-heading">
+            <span class="section-number">01.</span>
+
+            <div>
+              <h2>Choose your story</h2>
+              <p>
+                Select a title and tell us what your assessment is based on.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="media-title"> Movie or series </label>
+
+            <select id="media-title" name="media_title" required>
+              <option value="">Select a title</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="evidence-source">
+              What is your assessment based on?
+            </label>
+
+            <select id="evidence-source" name="evidence_source" required>
+              <option value="">Select a source</option>
+
+              <option value="watched">I watched it</option>
+
+              <option value="trailer">I watched the trailer</option>
+
+              <option value="synopsis">I read the synopsis</option>
+            </select>
+          </div>
+
+          <p class="field-hint">
+            If you have not watched the full title, evaluate the expected
+            emotional effect rather than a personal viewing experience.
+          </p>
+        </section>
+
+        <section class="research-panel">
+          <div class="section-heading">
+            <span class="section-number">02.</span>
+
+            <div>
+              <h2>Emotional characteristics</h2>
+
+              <p>Evaluate each emotional category independently.</p>
+            </div>
+          </div>
+
+          <div class="scale-guide">
+            <p>
+              <strong>Intensity:</strong>
+              0 — None, 1 — Weak, 2 — Moderate, 3 — Strong
+            </p>
+
+            <p>
+              <strong>Confidence:</strong>
+              1 — Low, 2 — Medium, 3 — High
+            </p>
+          </div>
+
+          <div id="emotion-fields" class="emotion-grid"></div>
+        </section>
+
+        <section class="research-panel">
+          <div class="section-heading">
+            <span class="section-number">03.</span>
+
+            <div>
+              <h2>Additional notes</h2>
+              <p>This section is optional.</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="annotation-note">
+              Would you like to explain your assessment?
+            </label>
+
+            <textarea
+              id="annotation-note"
+              name="annotation_note"
+              rows="4"
+              maxlength="2000"
+              placeholder="Share your thoughts about the emotional experience..."
+            ></textarea>
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <button type="reset" class="reset-btn">CLEAR ANSWERS</button>
+
+          <button type="submit" class="submit-btn">CHECK ANSWERS →</button>
+        </div>
+      </form>
+
+      <section
+        id="annotation-preview"
+        class="research-panel results-panel"
+        aria-live="polite"
+        hidden
+      ></section>
+
+      <footer class="research-footer">MYLIST COMPASS ✦ RESEARCH PROJECT</footer>
+    </main>
+  </body>
+</html>
