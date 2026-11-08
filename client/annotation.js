@@ -5,26 +5,11 @@ const mediaSelect = document.getElementById("media-title");
 const emotionFields = document.getElementById("emotion-fields");
 const annotationPreview = document.getElementById("annotation-preview");
 
-// Preview Catalog
+// Catalog
 
-const previewCatalog = [
-  "A Quiet Place",
-  "Coco",
-  "Dark",
-  "Friends",
-  "Home Alone",
-  "Inception",
-  "Inside Out",
-  "Interstellar",
-  "Shrek",
-  "The Bear",
-  "The Conjuring",
-  "The Good Place",
-  "The Lion King",
-  "The Matrix",
-  "Titanic",
-  "Toy Story",
-];
+const mediaCatalog = new Map();
+
+mediaSelect.name = "media_id";
 
 // Emotions
 
@@ -67,16 +52,76 @@ const emotions = [
   },
 ];
 
-// Catalog
+// Catalog Messages
 
-previewCatalog.forEach((title) => {
-  const option = document.createElement("option");
+function setCatalogMessage(message) {
+  mediaSelect.replaceChildren(new Option(message, ""));
 
-  option.value = title;
-  option.textContent = title;
+  mediaSelect.disabled = true;
+}
 
-  mediaSelect.append(option);
-});
+// Load Catalog
+
+async function loadMediaCatalog() {
+  setCatalogMessage("Loading titles...");
+
+  try {
+    const response = await fetch("/api/compass/catalog", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+
+    if (response.status === 401) {
+      throw new Error("Please log in to My List to load the catalog.");
+    }
+
+    if (!response.ok) {
+      throw new Error("Unable to load the media catalog.");
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data.media)) {
+      throw new Error("Invalid catalog response.");
+    }
+
+    mediaCatalog.clear();
+
+    mediaSelect.replaceChildren(new Option("Select a title", ""));
+
+    data.media.forEach((media) => {
+      if (media.id == null || typeof media.title !== "string") {
+        return;
+      }
+
+      const id = String(media.id);
+
+      mediaCatalog.set(id, media);
+
+      const type = media.category === "series" ? "Series" : "Movie";
+
+      const year = media.release_year ? ` · ${media.release_year}` : "";
+
+      const option = new Option(`${media.title} (${type}${year})`, id);
+
+      mediaSelect.append(option);
+    });
+
+    if (mediaCatalog.size === 0) {
+      setCatalogMessage("No titles available");
+      return;
+    }
+
+    mediaSelect.disabled = false;
+
+    console.log(`MyList Compass: ${mediaCatalog.size} titles loaded.`);
+  } catch (error) {
+    console.error("Catalog loading error:", error);
+
+    setCatalogMessage(error.message);
+  }
+}
 
 // Select
 
@@ -157,10 +202,12 @@ annotationForm.addEventListener("submit", (event) => {
 
   const formData = new FormData(annotationForm);
 
-  const title = formData.get("media_title");
+  const mediaId = formData.get("media_id");
   const source = formData.get("evidence_source");
 
-  if (!previewCatalog.includes(title)) {
+  const media = mediaCatalog.get(String(mediaId));
+
+  if (!media || !source) {
     return;
   }
 
@@ -168,7 +215,10 @@ annotationForm.addEventListener("submit", (event) => {
   heading.textContent = "Annotation Preview ✦";
 
   const mediaInfo = document.createElement("p");
-  mediaInfo.textContent = `Media: ${title}`;
+  mediaInfo.textContent = `Media: ${media.title}`;
+
+  const mediaIdInfo = document.createElement("p");
+  mediaIdInfo.textContent = `Catalog ID: ${media.id}`;
 
   const sourceInfo = document.createElement("p");
   sourceInfo.textContent = `Evidence source: ${source}`;
@@ -181,7 +231,9 @@ annotationForm.addEventListener("submit", (event) => {
 
   ["Emotion", "Intensity", "Confidence"].forEach((text) => {
     const th = document.createElement("th");
+
     th.textContent = text;
+
     headerRow.append(th);
   });
 
@@ -200,7 +252,9 @@ annotationForm.addEventListener("submit", (event) => {
 
     values.forEach((value) => {
       const cell = document.createElement("td");
+
       cell.textContent = value;
+
       row.append(cell);
     });
 
@@ -211,11 +265,13 @@ annotationForm.addEventListener("submit", (event) => {
 
   const note = document.createElement("p");
   note.className = "results-notice";
+
   note.textContent = "Preview only. Your answers have not been saved.";
 
   annotationPreview.replaceChildren(
     heading,
     mediaInfo,
+    mediaIdInfo,
     sourceInfo,
     table,
     note,
@@ -234,3 +290,11 @@ annotationForm.addEventListener("submit", (event) => {
 annotationForm.addEventListener("reset", () => {
   annotationPreview.hidden = true;
 });
+
+annotationForm.addEventListener("change", () => {
+  annotationPreview.hidden = true;
+});
+
+// Initialization
+
+loadMediaCatalog();

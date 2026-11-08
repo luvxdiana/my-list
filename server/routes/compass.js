@@ -37,6 +37,34 @@ const VALID_TIMES = new Set(["30", "60", "90", "120", "180plus"]);
 
 const VALID_TYPES = new Set(["movie", "series", "either"]);
 
+// Media Catalog
+
+router.get("/catalog", requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+            SELECT
+                id,
+                title,
+                category,
+                release_year
+            FROM public.media_catalog
+            WHERE category IN ('movie', 'series')
+            ORDER BY title ASC, release_year DESC, id ASC
+        `);
+
+    return res.json({
+      count: result.rows.length,
+      media: result.rows,
+    });
+  } catch (error) {
+    console.error("Compass catalog error:", error);
+
+    return res.status(500).json({
+      message: "Unable to load media catalog.",
+    });
+  }
+});
+
 // Recommendations
 
 router.post("/recommend", requireAuth, async (req, res) => {
@@ -86,8 +114,6 @@ router.post("/recommend", requireAuth, async (req, res) => {
       contentType: content_type,
       preferredGenres,
     });
-
-    // Response
 
     return res.json({
       algorithm_version: ALGORITHM_VERSION,

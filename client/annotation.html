@@ -8,7 +8,9 @@
     <title>Emotional Research | MyList Compass</title>
 
     <link rel="stylesheet" href="annotation.css" />
+
     <script src="annotation.js" defer></script>
+    <script src="annotation-consent.js" defer></script>
   </head>
 
   <body>
@@ -43,16 +45,118 @@
       <div class="preview-notice" role="note">
         <strong>Preview mode.</strong>
         This page does not send or save your answers. Research participation and
-        consent will be implemented separately.
+        consent are not yet enabled.
       </div>
 
-      <form id="annotation-form">
+      <!-- Research Information -->
+
+      <section
+        id="research-info-panel"
+        class="research-panel"
+        aria-labelledby="research-info-title"
+      >
+        <div class="section-heading">
+          <span class="section-number">✦</span>
+
+          <div>
+            <h2 id="research-info-title">Before we begin</h2>
+
+            <p>Please read the information about the proposed research.</p>
+          </div>
+        </div>
+
+        <h3>About this research</h3>
+
+        <p>
+          MyList Compass is a research project exploring how emotional
+          characteristics of movies and television series can support
+          personalized recommendations.
+        </p>
+
+        <h3>What would you do?</h3>
+
+        <p>
+          Participants would select a movie or series and evaluate six emotional
+          characteristics: Joy, Comfort, Peace, Inspiration, Excitement, and
+          Energy.
+        </p>
+
+        <p>
+          Each characteristic is evaluated using an intensity scale from 0 to 3
+          and a confidence scale from 1 to 3.
+        </p>
+
+        <h3>What information would be collected?</h3>
+
+        <p>
+          The proposed study would collect the selected media item, emotional
+          ratings, confidence levels, evidence source, and optional comments.
+        </p>
+
+        <p>
+          Research records would be associated with a pseudonymous participant
+          code linked to an authorized My List account.
+        </p>
+
+        <h3>How would the information be used?</h3>
+
+        <p>
+          Research data would support the development of an emotional media
+          dataset, comparison of annotator assessments, and evaluation of
+          recommendation algorithms.
+        </p>
+
+        <h3>Is participation voluntary?</h3>
+
+        <p>
+          Yes. Participation in the planned study would be voluntary and
+          separate from normal use of My List.
+        </p>
+
+        <p>
+          Participants would be able to withdraw according to the procedure
+          described in the finalized research information.
+        </p>
+
+        <div class="preview-notice">
+          <strong>Important:</strong>
+          This is draft research information. Research contacts, data retention,
+          withdrawal procedures, and final participation terms must be confirmed
+          before inviting real participants. No research consent is collected
+          here.
+        </div>
+
+        <div class="form-group">
+          <label for="research-review-checkbox">
+            <input type="checkbox" id="research-review-checkbox" />
+
+            I have read this draft information and want to continue testing the
+            annotation form.
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            id="research-continue-btn"
+            class="submit-btn"
+            disabled
+          >
+            CONTINUE TO FORM PREVIEW →
+          </button>
+        </div>
+      </section>
+
+      <!-- Annotation Form -->
+
+      <form id="annotation-form" hidden>
         <section class="research-panel">
           <div class="section-heading">
             <span class="section-number">01.</span>
 
             <div>
               <h2>Choose your story</h2>
+
               <p>
                 Select a title and tell us what your assessment is based on.
               </p>
@@ -62,7 +166,7 @@
           <div class="form-group">
             <label for="media-title"> Movie or series </label>
 
-            <select id="media-title" name="media_title" required>
+            <select id="media-title" name="media_id" required>
               <option value="">Select a title</option>
             </select>
           </div>
@@ -121,6 +225,7 @@
 
             <div>
               <h2>Additional notes</h2>
+
               <p>This section is optional.</p>
             </div>
           </div>
@@ -146,6 +251,8 @@
           <button type="submit" class="submit-btn">CHECK ANSWERS →</button>
         </div>
       </form>
+
+      <!-- Results -->
 
       <section
         id="annotation-preview"

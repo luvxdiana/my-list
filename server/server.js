@@ -11,6 +11,7 @@ const authRoutes = require("./routes/auth");
 const entriesRoutes = require("./routes/entries");
 const photoRoutes = require("./routes/photos");
 const compassRoutes = require("./routes/compass");
+const researchRoutes = require("./routes/research");
 
 // App
 
@@ -77,6 +78,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/entries", entriesRoutes);
 app.use("/api/entries", photoRoutes);
 app.use("/api/compass", compassRoutes);
+app.use("/api/research", researchRoutes);
 
 // Static Files
 
