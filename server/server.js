@@ -12,6 +12,7 @@ const entriesRoutes = require("./routes/entries");
 const photoRoutes = require("./routes/photos");
 const compassRoutes = require("./routes/compass");
 const researchRoutes = require("./routes/research");
+const onboardingRoutes = require("./routes/onboarding");
 
 // App
 
@@ -79,6 +80,7 @@ app.use("/api/entries", entriesRoutes);
 app.use("/api/entries", photoRoutes);
 app.use("/api/compass", compassRoutes);
 app.use("/api/research", researchRoutes);
+app.use("/api/compass/onboarding", onboardingRoutes);
 
 // Static Files
 

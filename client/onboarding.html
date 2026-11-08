@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <title>Discover Your Taste | MyList Compass</title>
+
+    <link rel="stylesheet" href="onboarding.css" />
+    <script src="onboarding.js" defer></script>
+  </head>
+
+  <body>
+    <main class="onboarding-page">
+      <!-- Header -->
+
+      <header class="onboarding-header">
+        <a href="dashboard.html" class="back-link"> ← Back to My List </a>
+
+        <div class="brand">MYLIST COMPASS <span>✦</span></div>
+
+        <span class="preview-badge">PREVIEW</span>
+      </header>
+
+      <!-- Introduction -->
+
+      <section class="introduction">
+        <span class="intro-icon">✦</span>
+
+        <p class="eyebrow">YOUR PERSONAL COMPASS</p>
+
+        <h1>
+          Let's discover
+          <span>your taste.</span>
+        </h1>
+
+        <p class="intro-description">
+          Tell us what you love, and let Compass find stories that feel right
+          for you.
+        </p>
+      </section>
+
+      <div class="preview-notice">
+        <strong>Preview mode.</strong>
+        Your preferences are not saved yet. We're testing the onboarding
+        experience.
+      </div>
+
+      <!-- Progress -->
+
+      <div class="progress-container">
+        <div class="progress-label">
+          <span id="progress-text">Step 1 of 2</span>
+          <span id="progress-percent">50%</span>
+        </div>
+
+        <div class="progress-track">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Genres -->
+
+      <section id="genres-step" class="onboarding-panel">
+        <div class="section-heading">
+          <span class="section-number">01.</span>
+
+          <div>
+            <h2>What genres do you love?</h2>
+
+            <p>Choose 3 to 5 genres that you enjoy the most.</p>
+          </div>
+        </div>
+
+        <p id="genre-status" class="genre-status" role="status">
+          Loading genres...
+        </p>
+
+        <div id="genre-grid" class="genre-grid"></div>
+
+        <div class="selection-footer">
+          <span id="genre-counter">0 of 5 selected</span>
+
+          <button
+            id="genres-next-btn"
+            class="primary-button"
+            type="button"
+            disabled
+          >
+            CONTINUE →
+          </button>
+        </div>
+      </section>
+
+      <!-- Content Type -->
+
+      <section id="content-step" class="onboarding-panel" hidden>
+        <div class="section-heading">
+          <span class="section-number">02.</span>
+
+          <div>
+            <h2>What do you prefer watching?</h2>
+
+            <p>Choose your favorite type of content.</p>
+          </div>
+        </div>
+
+        <div class="content-options">
+          <label class="content-card">
+            <input type="radio" name="content_type" value="movie" />
+
+            <span class="content-icon">🎬</span>
+            <span class="content-name">Movies</span>
+            <span class="content-description"> Stories in one sitting </span>
+          </label>
+
+          <label class="content-card">
+            <input type="radio" name="content_type" value="series" />
+
+            <span class="content-icon">📺</span>
+            <span class="content-name">Series</span>
+            <span class="content-description"> Stories that unfold </span>
+          </label>
+
+          <label class="content-card">
+            <input type="radio" name="content_type" value="either" />
+
+            <span class="content-icon">✨</span>
+            <span class="content-name">Both</span>
+            <span class="content-description">
+              I love all kinds of stories
+            </span>
+          </label>
+        </div>
+
+        <div class="selection-footer">
+          <button id="content-back-btn" class="secondary-button" type="button">
+            ← BACK
+          </button>
+
+          <button
+            id="content-next-btn"
+            class="primary-button"
+            type="button"
+            disabled
+          >
+            SEE MY PROFILE →
+          </button>
+        </div>
+      </section>
+
+      <!-- Preview -->
+
+      <section id="result-step" class="onboarding-panel result-panel" hidden>
+        <div class="result-icon">✦</div>
+
+        <h2>Your Compass Profile</h2>
+
+        <p class="result-description">
+          These preferences will help Compass personalize your first
+          recommendations.
+        </p>
+
+        <h3>Your favorite genres</h3>
+
+        <div id="selected-genres" class="selected-genres"></div>
+
+        <h3>Your preferred content</h3>
+
+        <p id="selected-content" class="selected-content"></p>
+
+        <div class="result-notice">
+          This is a preview of your initial profile. Nothing has been saved to
+          PostgreSQL yet.
+        </div>
+
+        <button id="edit-profile-btn" class="secondary-button" type="button">
+          ← EDIT MY CHOICES
+        </button>
+      </section>
+
+      <!-- Footer -->
+
+      <footer class="onboarding-footer">
+        MYLIST COMPASS ✦ FIND YOUR DIRECTION
+      </footer>
+    </main>
+  </body>
+</html>
