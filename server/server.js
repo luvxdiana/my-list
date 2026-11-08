@@ -12,6 +12,7 @@ const entriesRoutes = require("./routes/entries");
 const photoRoutes = require("./routes/photos");
 const compassRoutes = require("./routes/compass");
 const researchRoutes = require("./routes/research");
+const researchDocumentsRoutes = require("./routes/researchDocuments");
 const onboardingRoutes = require("./routes/onboarding");
 
 // App
@@ -78,9 +79,12 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/entries", entriesRoutes);
 app.use("/api/entries", photoRoutes);
+
 app.use("/api/compass", compassRoutes);
-app.use("/api/research", researchRoutes);
 app.use("/api/compass/onboarding", onboardingRoutes);
+
+app.use("/api/research/documents", researchDocumentsRoutes);
+app.use("/api/research", researchRoutes);
 
 // Static Files
 
