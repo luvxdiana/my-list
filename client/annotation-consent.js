@@ -17,19 +17,20 @@ const researchCheckboxGroup = researchReviewCheckbox.closest(".form-group");
 const PREVIEW_VERSION = "TEST-PREVIEW-v1";
 
 let previewAccessAllowed = false;
+let loadedPreviewDocument = null;
+let acknowledgementInProgress = false;
 
-// Research Status Message
+// Research Status
 
 const researchStatusMessage = document.createElement("div");
 
 researchStatusMessage.className = "preview-notice";
-
 researchStatusMessage.setAttribute("role", "status");
 researchStatusMessage.setAttribute("aria-live", "polite");
 
 researchInfoPanel.insertBefore(researchStatusMessage, researchCheckboxGroup);
 
-// Research Document Elements
+// Research Document
 
 const researchDocumentPanel = document.createElement("section");
 
@@ -65,15 +66,29 @@ researchDocumentPanel.append(
 
 researchInfoPanel.insertBefore(researchDocumentPanel, researchCheckboxGroup);
 
+// Form Notice
+
+const researchFormNotice = document.createElement("div");
+
+researchFormNotice.className = "preview-notice";
+researchFormNotice.setAttribute("role", "status");
+
+researchAnnotationForm.insertBefore(
+  researchFormNotice,
+  researchAnnotationForm.firstChild,
+);
+
 // Access Control
 
 function lockResearchPreview(message) {
   previewAccessAllowed = false;
+  loadedPreviewDocument = null;
 
   researchReviewCheckbox.checked = false;
   researchReviewCheckbox.disabled = true;
 
   researchContinueButton.disabled = true;
+  researchContinueButton.textContent = "CONTINUE TO FORM PREVIEW →";
 
   researchAnnotationForm.hidden = true;
   researchDocumentPanel.hidden = true;
@@ -88,6 +103,7 @@ function unlockResearchPreview(message) {
   researchReviewCheckbox.disabled = false;
 
   researchContinueButton.disabled = true;
+  researchContinueButton.textContent = "CONTINUE TO FORM PREVIEW →";
 
   researchDocumentPanel.hidden = false;
 
@@ -131,7 +147,9 @@ async function loadResearchDocument() {
     documentData.status !== "draft" ||
     typeof documentData.title !== "string" ||
     typeof documentData.text !== "string" ||
-    !documentData.text.trim()
+    !documentData.text.trim() ||
+    typeof documentData.hash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(documentData.hash)
   ) {
     throw new Error("Unexpected research document response.");
   }
@@ -146,7 +164,10 @@ async function loadResearchDocument() {
 
   researchDocumentText.textContent = documentData.text;
 
-  return documentData;
+  loadedPreviewDocument = {
+    version: documentData.version,
+    hash: documentData.hash,
+  };
 }
 
 // Load Research Status
@@ -224,8 +245,8 @@ async function loadResearchStatus() {
     if (invited) {
       unlockResearchPreview(
         "You have a research invitation. " +
-          "Please review the preview document below before continuing. " +
-          "No research consent or answers will be saved.",
+          "Please review the preview document before continuing. " +
+          "This is not formal research consent.",
       );
 
       return;
@@ -233,40 +254,161 @@ async function loadResearchStatus() {
 
     unlockResearchPreview(
       "Test participation confirmed. " +
-        "Please review the preview document below. " +
-        "Your answers will not be saved.",
+        "Please review the preview document before continuing. " +
+        "This is not formal research consent.",
     );
   } catch (error) {
     console.error("Research preview loading error:", error);
 
     lockResearchPreview(
-      error.message ||
-        "Unable to prepare the research preview. Please try again.",
+      error.message || "Unable to prepare the research preview.",
     );
   }
+}
+
+// Acknowledgement
+
+async function recordPreviewAcknowledgement() {
+  if (!loadedPreviewDocument) {
+    throw new Error("Research preview document has not been loaded.");
+  }
+
+  const response = await fetch("/api/research/documents/preview-acknowledge", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({
+      version: loadedPreviewDocument.version,
+      document_hash: loadedPreviewDocument.hash,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  // Request Errors
+
+  if (!response.ok) {
+    const error = new Error(
+      data.message || "Unable to record preview acknowledgement.",
+    );
+
+    error.status = response.status;
+
+    throw error;
+  }
+
+  // Response Validation
+
+  const newlyRecorded =
+    response.status === 201 &&
+    data.saved === true &&
+    data.already_recorded === false;
+
+  const previouslyRecorded =
+    response.status === 200 &&
+    data.saved === false &&
+    data.already_recorded === true;
+
+  if (
+    data.preview_only !== true ||
+    data.document_version !== PREVIEW_VERSION ||
+    (!newlyRecorded && !previouslyRecorded)
+  ) {
+    throw new Error("Unexpected preview acknowledgement response.");
+  }
+
+  return {
+    newlyRecorded,
+    previouslyRecorded,
+  };
 }
 
 // Checkbox
 
 researchReviewCheckbox.addEventListener("change", () => {
   researchContinueButton.disabled =
-    !previewAccessAllowed || !researchReviewCheckbox.checked;
+    !previewAccessAllowed ||
+    !researchReviewCheckbox.checked ||
+    acknowledgementInProgress;
 });
 
 // Continue to Preview
 
-researchContinueButton.addEventListener("click", () => {
-  if (!previewAccessAllowed || !researchReviewCheckbox.checked) {
+researchContinueButton.addEventListener("click", async () => {
+  if (
+    !previewAccessAllowed ||
+    !researchReviewCheckbox.checked ||
+    !loadedPreviewDocument ||
+    acknowledgementInProgress
+  ) {
     return;
   }
 
-  researchInfoPanel.hidden = true;
-  researchAnnotationForm.hidden = false;
+  acknowledgementInProgress = true;
 
-  researchAnnotationForm.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
+  researchReviewCheckbox.disabled = true;
+  researchContinueButton.disabled = true;
+
+  researchContinueButton.textContent = "RECORDING PREVIEW ACKNOWLEDGEMENT...";
+
+  researchStatusMessage.textContent = "Recording your test acknowledgement...";
+
+  try {
+    // Server Acknowledgement
+
+    const result = await recordPreviewAcknowledgement();
+
+    // Form Message
+
+    if (result.newlyRecorded) {
+      researchFormNotice.textContent =
+        "Your test acknowledgement has been recorded. " +
+        "This is not formal research consent. " +
+        "Your annotation answers will not be saved.";
+    } else {
+      researchFormNotice.textContent =
+        "Your test acknowledgement was already recorded. " +
+        "No duplicate event was created. " +
+        "Your annotation answers will not be saved.";
+    }
+
+    // Open Form
+
+    researchInfoPanel.hidden = true;
+    researchAnnotationForm.hidden = false;
+
+    researchAnnotationForm.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  } catch (error) {
+    console.error("Research acknowledgement error:", error);
+
+    // Access Or Document Errors
+
+    if (error.status === 401 || error.status === 403 || error.status === 409) {
+      lockResearchPreview(error.message + " Please refresh the page.");
+
+      return;
+    }
+
+    // Retry Allowed
+
+    researchStatusMessage.textContent =
+      error.message || "Unable to record acknowledgement. Please try again.";
+  } finally {
+    acknowledgementInProgress = false;
+
+    if (previewAccessAllowed) {
+      researchReviewCheckbox.disabled = false;
+
+      researchContinueButton.disabled = !researchReviewCheckbox.checked;
+
+      researchContinueButton.textContent = "CONTINUE TO FORM PREVIEW →";
+    }
+  }
 });
 
 // Initialization
