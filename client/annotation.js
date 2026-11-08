@@ -4,6 +4,9 @@ const annotationForm = document.getElementById("annotation-form");
 const mediaSelect = document.getElementById("media-title");
 const emotionFields = document.getElementById("emotion-fields");
 const annotationPreview = document.getElementById("annotation-preview");
+const annotationSubmitButton = annotationForm.querySelector(
+  'button[type="submit"]',
+);
 
 // Catalog
 
@@ -103,9 +106,7 @@ async function loadMediaCatalog() {
 
       const year = media.release_year ? ` · ${media.release_year}` : "";
 
-      const option = new Option(`${media.title} (${type}${year})`, id);
-
-      mediaSelect.append(option);
+      mediaSelect.append(new Option(`${media.title} (${type}${year})`, id));
     });
 
     if (mediaCatalog.size === 0) {
@@ -195,21 +196,63 @@ emotions.forEach((emotion) => {
   emotionFields.append(card);
 });
 
-// Preview Results
+// Result Messages
 
-annotationForm.addEventListener("submit", (event) => {
-  event.preventDefault();
+function showAnnotationMessage(title, messages) {
+  const heading = document.createElement("h2");
+  heading.textContent = title;
 
-  const formData = new FormData(annotationForm);
+  annotationPreview.replaceChildren(heading);
 
-  const mediaId = formData.get("media_id");
-  const source = formData.get("evidence_source");
+  messages.forEach((message) => {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = message;
 
-  const media = mediaCatalog.get(String(mediaId));
+    annotationPreview.append(paragraph);
+  });
 
-  if (!media || !source) {
-    return;
+  annotationPreview.hidden = false;
+
+  annotationPreview.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
+// Prepare Ratings
+
+function readRating(formData, fieldName) {
+  const value = formData.get(fieldName);
+
+  if (value === null || value === "") {
+    return null;
   }
+
+  return Number(value);
+}
+
+function buildAnnotationPayload(formData) {
+  return {
+    media_id: String(formData.get("media_id") || ""),
+
+    evidence_source: formData.get("evidence_source"),
+
+    annotation_note: String(formData.get("annotation_note") || ""),
+
+    ratings: emotions.map((emotion) => ({
+      emotion_code: emotion.code,
+
+      intensity: readRating(formData, `intensity_${emotion.code}`),
+
+      confidence: readRating(formData, `confidence_${emotion.code}`),
+    })),
+  };
+}
+
+// Show Validated Preview
+
+function showAnnotationPreview(payload) {
+  const media = mediaCatalog.get(payload.media_id);
 
   const heading = document.createElement("h2");
   heading.textContent = "Annotation Preview ✦";
@@ -221,7 +264,10 @@ annotationForm.addEventListener("submit", (event) => {
   mediaIdInfo.textContent = `Catalog ID: ${media.id}`;
 
   const sourceInfo = document.createElement("p");
-  sourceInfo.textContent = `Evidence source: ${source}`;
+  sourceInfo.textContent = `Evidence source: ${payload.evidence_source}`;
+
+  const validationInfo = document.createElement("p");
+  validationInfo.textContent = "Server validation: Passed ✓";
 
   const table = document.createElement("table");
   table.className = "results-table";
@@ -233,7 +279,6 @@ annotationForm.addEventListener("submit", (event) => {
     const th = document.createElement("th");
 
     th.textContent = text;
-
     headerRow.append(th);
   });
 
@@ -241,20 +286,17 @@ annotationForm.addEventListener("submit", (event) => {
 
   const tbody = document.createElement("tbody");
 
-  emotions.forEach((emotion) => {
+  payload.ratings.forEach((rating) => {
     const row = document.createElement("tr");
 
-    const values = [
-      emotion.name,
-      formData.get(`intensity_${emotion.code}`),
-      formData.get(`confidence_${emotion.code}`),
-    ];
+    const emotion = emotions.find((item) => item.code === rating.emotion_code);
+
+    const values = [emotion.name, rating.intensity, rating.confidence];
 
     values.forEach((value) => {
       const cell = document.createElement("td");
 
-      cell.textContent = value;
-
+      cell.textContent = String(value);
       row.append(cell);
     });
 
@@ -263,18 +305,21 @@ annotationForm.addEventListener("submit", (event) => {
 
   table.append(thead, tbody);
 
-  const note = document.createElement("p");
-  note.className = "results-notice";
+  const notice = document.createElement("p");
+  notice.className = "results-notice";
 
-  note.textContent = "Preview only. Your answers have not been saved.";
+  notice.textContent =
+    "Preview only. Your answers passed server validation " +
+    "but have not been saved.";
 
   annotationPreview.replaceChildren(
     heading,
     mediaInfo,
     mediaIdInfo,
     sourceInfo,
+    validationInfo,
     table,
-    note,
+    notice,
   );
 
   annotationPreview.hidden = false;
@@ -283,6 +328,81 @@ annotationForm.addEventListener("submit", (event) => {
     behavior: "smooth",
     block: "start",
   });
+}
+
+// Submit Annotation Preview
+
+annotationForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const formData = new FormData(annotationForm);
+
+  const payload = buildAnnotationPayload(formData);
+
+  if (!mediaCatalog.has(payload.media_id)) {
+    showAnnotationMessage("Invalid selection", [
+      "Please select a media item from the catalog.",
+    ]);
+
+    return;
+  }
+
+  annotationSubmitButton.disabled = true;
+  annotationSubmitButton.textContent = "CHECKING...";
+
+  try {
+    const response = await fetch("/api/research/annotations/preview-check", {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      credentials: "same-origin",
+
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (response.status === 400) {
+      showAnnotationMessage(
+        "Please check your answers",
+        Array.isArray(data?.errors)
+          ? data.errors
+          : ["Invalid annotation data."],
+      );
+
+      return;
+    }
+
+    if (response.status === 401) {
+      throw new Error("Your session has expired. Please log in again.");
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.message || "Unable to validate your annotation.");
+    }
+
+    if (
+      data?.valid !== true ||
+      data?.saved !== false ||
+      data?.preview_only !== true
+    ) {
+      throw new Error("Unexpected validation response.");
+    }
+
+    showAnnotationPreview(payload);
+  } catch (error) {
+    console.error("Annotation validation error:", error);
+
+    showAnnotationMessage("Validation unavailable", [
+      error.message || "Please try again.",
+    ]);
+  } finally {
+    annotationSubmitButton.disabled = false;
+    annotationSubmitButton.textContent = "CHECK ANSWERS →";
+  }
 });
 
 // Reset

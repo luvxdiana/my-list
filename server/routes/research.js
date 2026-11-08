@@ -4,6 +4,10 @@ const express = require("express");
 const pool = require("../db");
 const requireAuth = require("../middleware/requireAuth");
 
+const {
+  validateResearchAnnotation,
+} = require("../services/validateResearchAnnotation");
+
 const router = express.Router();
 
 const PREVIEW_VERSION = "TEST-PREVIEW-v1";
@@ -171,6 +175,27 @@ router.post("/preview-withdraw", requireAuth, async (req, res) => {
       message: "Unable to withdraw participation.",
     });
   }
+});
+
+// Annotation Preview Validation
+
+router.post("/annotations/preview-check", requireAuth, (req, res) => {
+  if (process.env.NODE_ENV !== "development") {
+    return res.status(404).json({
+      message: "Not found.",
+    });
+  }
+
+  const result = validateResearchAnnotation(req.body);
+
+  res.set("Cache-Control", "no-store");
+
+  return res.status(result.valid ? 200 : 400).json({
+    valid: result.valid,
+    errors: result.errors,
+    preview_only: true,
+    saved: false,
+  });
 });
 
 module.exports = router;
