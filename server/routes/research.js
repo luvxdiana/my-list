@@ -12,6 +12,7 @@ const {
 const router = express.Router();
 
 const PREVIEW_VERSION = "TEST-PREVIEW-v1";
+const UNIQUE_TEST_ANNOTATION_INDEX = "uq_research_test_batches_annotator_media";
 
 // Research Status
 
@@ -387,6 +388,8 @@ router.post("/annotations/test-save", requireAuth, async (req, res) => {
       ratings_saved: req.body.ratings.length,
     });
   } catch (error) {
+    // Rollback
+
     if (transactionStarted && client) {
       try {
         await client.query("ROLLBACK");
@@ -394,6 +397,20 @@ router.post("/annotations/test-save", requireAuth, async (req, res) => {
         console.error("Research rollback error:", rollbackError);
       }
     }
+
+    // Unique Constraint
+
+    if (
+      error.code === "23505" &&
+      error.constraint === UNIQUE_TEST_ANNOTATION_INDEX
+    ) {
+      return res.status(409).json({
+        message: "This test participant has already " + "annotated this title.",
+        saved: false,
+      });
+    }
+
+    // Other Errors
 
     console.error("Research test annotation error:", error);
 
