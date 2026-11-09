@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Catalog Administration | MyList Compass</title>
+
+    <link rel="stylesheet" href="catalog-admin.css" />
+
+    <script src="catalog-admin.js" defer></script>
+  </head>
+
+  <body>
+    <main class="admin-container">
+      <!-- Header -->
+
+      <header class="admin-header">
+        <div>
+          <span class="admin-label"> MYLIST COMPASS </span>
+
+          <h1>Catalog Administration</h1>
+
+          <p>Search TMDB and manage the research media catalog.</p>
+        </div>
+
+        <a href="/" class="back-link"> ← Back to MyList </a>
+      </header>
+
+      <!-- Access Status -->
+
+      <section id="access-status" class="status-box" role="status">
+        Checking administrator permissions...
+      </section>
+
+      <!-- Admin Panel -->
+
+      <div id="admin-panel" hidden>
+        <!-- Search -->
+
+        <section class="admin-card">
+          <h2>Search TMDB</h2>
+
+          <p class="section-description">
+            Find movies or television series in TMDB.
+          </p>
+
+          <form id="tmdb-search-form">
+            <div class="search-controls">
+              <label>
+                Media type
+
+                <select id="media-type">
+                  <option value="movie">Movie</option>
+                  <option value="series">Series</option>
+                </select>
+              </label>
+
+              <label class="search-input-group">
+                Title
+
+                <input
+                  type="text"
+                  id="search-query"
+                  placeholder="Enter a movie or series title"
+                  minlength="2"
+                  maxlength="100"
+                  required
+                />
+              </label>
+
+              <button type="submit" id="search-button">Search</button>
+            </div>
+          </form>
+
+          <p id="search-status" class="helper-text" role="status"></p>
+        </section>
+
+        <!-- Results -->
+
+        <section id="search-results-section" class="admin-card" hidden>
+          <h2>Search Results</h2>
+
+          <div id="search-results"></div>
+        </section>
+
+        <!-- Preview -->
+
+        <section id="media-preview-section" class="admin-card" hidden>
+          <h2>Media Preview</h2>
+
+          <div id="media-details"></div>
+
+          <div class="divider"></div>
+
+          <h3>Catalog Matching</h3>
+
+          <div id="match-details"></div>
+
+          <p class="preview-warning">
+            Preview only. No changes will be made to PostgreSQL.
+          </p>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
