@@ -36,6 +36,7 @@ VALUES
     ('History'),
     ('Horror'),
     ('Mystery'),
+    ('Music'),
     ('Romance'),
     ('Science Fiction'),
     ('Thriller'),
