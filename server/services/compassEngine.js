@@ -1,6 +1,6 @@
 // Compass Engine
 
-const ALGORITHM_VERSION = "compass-heuristic-v1.1";
+const ALGORITHM_VERSION = "compass-heuristic-v1.2";
 
 const MOOD_SUPPORT = {
   happy: ["joy", "inspiration", "energy"],
@@ -29,6 +29,34 @@ const TIME_LIMITS = {
 };
 
 const VALID_CONTENT_TYPES = new Set(["movie", "series", "either"]);
+
+// Genre Matching
+
+const COMBINED_GENRE = "sci-fi & fantasy";
+
+const RELATED_GENRES = new Set(["science fiction", "fantasy"]);
+
+const RELATED_GENRE_STRENGTH = 0.5;
+
+function getGenreMatchStrength(preferredGenre, mediaGenres) {
+  if (mediaGenres.has(preferredGenre)) {
+    return 1;
+  }
+
+  if (preferredGenre === COMBINED_GENRE) {
+    const relatedMatch = [...RELATED_GENRES].some((genre) =>
+      mediaGenres.has(genre),
+    );
+
+    return relatedMatch ? RELATED_GENRE_STRENGTH : 0;
+  }
+
+  if (RELATED_GENRES.has(preferredGenre) && mediaGenres.has(COMBINED_GENRE)) {
+    return RELATED_GENRE_STRENGTH;
+  }
+
+  return 0;
+}
 
 // Recommendations
 
@@ -132,14 +160,27 @@ function recommendMedia({
 
     // Preferred Genres
 
-    const matchingGenres = [...userGenres].filter((genre) => genres.has(genre));
+    const genreStrengths = [...userGenres].map((genre) =>
+      getGenreMatchStrength(genre, genres),
+    );
+
+    const totalGenreStrength = genreStrengths.reduce(
+      (total, strength) => total + strength,
+      0,
+    );
 
     if (userGenres.size > 0) {
-      score += 0.2 * (matchingGenres.length / userGenres.size);
+      score += 0.2 * (totalGenreStrength / userGenres.size);
     }
 
-    if (matchingGenres.length > 0) {
-      reasons.push("Matches your favorite genres");
+    if (totalGenreStrength > 0) {
+      const hasExactMatch = genreStrengths.some((strength) => strength === 1);
+
+      reasons.push(
+        hasExactMatch
+          ? "Matches your favorite genres"
+          : "Related to your favorite genres",
+      );
     }
 
     return {
