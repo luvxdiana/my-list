@@ -37,20 +37,45 @@ const VALID_TIMES = new Set(["30", "60", "90", "120", "180plus"]);
 
 const VALID_TYPES = new Set(["movie", "series", "either"]);
 
+const RECOMMENDATION_LIMIT = 3;
+
+// Recommendation Status
+
+function getRecommendationStatus(count) {
+  if (count === 0) {
+    return {
+      status: "empty",
+      message: "No media currently matches your selected preferences.",
+    };
+  }
+
+  if (count < RECOMMENDATION_LIMIT) {
+    return {
+      status: "partial",
+      message: `Only ${count} matching recommendation${count === 1 ? "" : "s"} available.`,
+    };
+  }
+
+  return {
+    status: "complete",
+    message: "3 recommendations found.",
+  };
+}
+
 // Media Catalog
 
 router.get("/catalog", requireAuth, async (req, res) => {
   try {
     const result = await pool.query(`
-            SELECT
-                id,
-                title,
-                category,
-                release_year
-            FROM public.media_catalog
-            WHERE category IN ('movie', 'series')
-            ORDER BY title ASC, release_year DESC, id ASC
-        `);
+      SELECT
+        id,
+        title,
+        category,
+        release_year
+      FROM public.media_catalog
+      WHERE category IN ('movie', 'series')
+      ORDER BY title ASC, release_year DESC, id ASC
+    `);
 
     return res.json({
       count: result.rows.length,
@@ -87,14 +112,12 @@ router.post("/recommend", requireAuth, async (req, res) => {
 
     const preferencesResult = await pool.query(
       `
-            SELECT genres.name
-            FROM public.compass_preferred_genres AS preferred
-
-            JOIN public.genres AS genres
-                ON genres.id = preferred.genre_id
-
-            WHERE preferred.user_id = $1
-            `,
+        SELECT genres.name
+        FROM public.compass_preferred_genres AS preferred
+        JOIN public.genres AS genres
+          ON genres.id = preferred.genre_id
+        WHERE preferred.user_id = $1
+      `,
       [req.userId],
     );
 
@@ -115,9 +138,16 @@ router.post("/recommend", requireAuth, async (req, res) => {
       preferredGenres,
     });
 
+    // Response Status
+
+    const result = getRecommendationStatus(recommendations.length);
+
     return res.json({
       algorithm_version: ALGORITHM_VERSION,
       count: recommendations.length,
+      requested_count: RECOMMENDATION_LIMIT,
+      result_status: result.status,
+      message: result.message,
       recommendations,
     });
   } catch (error) {

@@ -37,7 +37,7 @@ const compassLabels = {
     60: "1 hour",
     90: "1.5 hours",
     120: "2 hours",
-    "180plus": "3 hours or more",
+    "180plus": "No time limit",
   },
 
   content_type: {
@@ -116,28 +116,163 @@ function showCompassMessage(title, message) {
   compassPreview.hidden = false;
 }
 
+// Recommendation Status
+
+function getRecommendationStatus(data, count) {
+  const expectedStatus =
+    count === 0 ? "empty" : count < 3 ? "partial" : "complete";
+
+  const validStatuses = new Set(["complete", "partial", "empty"]);
+
+  if (
+    validStatuses.has(data?.result_status) &&
+    data.result_status === expectedStatus
+  ) {
+    return data.result_status;
+  }
+
+  return expectedStatus;
+}
+
+function getCompassSuggestion(preferences) {
+  const limitedCoverage =
+    "The current catalog has limited emotional tags for this choice.";
+
+  if (
+    preferences.content_type !== "either" &&
+    preferences.available_time !== "180plus"
+  ) {
+    return (
+      `${limitedCoverage} ` +
+      "You can try 'Movie or series' or a longer time limit, " +
+      "but these changes may not reveal additional matches."
+    );
+  }
+
+  if (preferences.content_type !== "either") {
+    return (
+      `${limitedCoverage} ` +
+      "Including both movies and series broadens the search, " +
+      "but may not provide more recommendations."
+    );
+  }
+
+  if (preferences.available_time !== "180plus") {
+    return (
+      `${limitedCoverage} ` +
+      "A longer time limit may help, but additional emotional " +
+      "annotations may still be needed."
+    );
+  }
+
+  return (
+    `${limitedCoverage} ` +
+    "More recommendations may become available after " +
+    "additional emotional annotations are reviewed."
+  );
+}
+
+function createRecommendationStatus(data, preferences, count) {
+  const status = getRecommendationStatus(data, count);
+
+  const container = document.createElement("div");
+
+  container.className = `compass-result-status compass-result-${status}`;
+
+  container.style.cssText = `
+    margin-top: 16px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+  `;
+
+  const title = document.createElement("h4");
+
+  title.style.cssText = `
+    margin: 0 0 8px;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+  `;
+
+  const description = document.createElement("p");
+
+  description.style.cssText = `
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+  `;
+
+  if (status === "complete") {
+    title.textContent = "Your matches are ready ✦";
+
+    description.textContent =
+      "We found 3 titles matching your selected preferences " +
+      "using the current catalog tags.";
+  }
+
+  if (status === "partial") {
+    title.textContent =
+      count === 1 ? "1 recommendation found ✦" : "2 recommendations found ✦";
+
+    description.textContent =
+      "These are the available matches for your chosen " +
+      "emotion, content type, and time limit. " +
+      "We won't fill the remaining places with unrelated titles.";
+  }
+
+  if (status === "empty") {
+    title.textContent = "No matches just yet ✦";
+
+    description.textContent =
+      "We couldn't find a title with the selected " +
+      "emotional tag that also meets your content " +
+      "and time preferences.";
+  }
+
+  container.append(title, description);
+
+  if (status !== "complete") {
+    const suggestion = document.createElement("p");
+
+    suggestion.textContent = getCompassSuggestion(preferences);
+
+    suggestion.style.cssText = `
+      margin: 10px 0 0;
+      font-size: 13px;
+      line-height: 1.6;
+      opacity: 0.85;
+    `;
+
+    container.append(suggestion);
+  }
+
+  return container;
+}
+
 // Recommendation Cards
 
 function createRecommendationCard(media) {
   const card = document.createElement("article");
 
   card.style.cssText = `
-        margin-top: 14px;
-        padding: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.25);
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.10);
-    `;
+    margin-top: 14px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.10);
+  `;
 
   const title = document.createElement("h4");
 
   title.textContent = `${media.position}. ${media.title}`;
 
   title.style.cssText = `
-        margin: 0 0 8px;
-        font-size: 19px;
-        color: #ffffff;
-    `;
+    margin: 0 0 8px;
+    font-size: 19px;
+    color: #ffffff;
+  `;
 
   const details = document.createElement("p");
 
@@ -153,10 +288,10 @@ function createRecommendationCard(media) {
     .join(" · ");
 
   details.style.cssText = `
-        margin: 0 0 10px;
-        font-size: 13px;
-        opacity: 0.85;
-    `;
+    margin: 0 0 10px;
+    font-size: 13px;
+    opacity: 0.85;
+  `;
 
   const genres = document.createElement("p");
 
@@ -165,9 +300,9 @@ function createRecommendationCard(media) {
     : "";
 
   genres.style.cssText = `
-        margin: 0 0 10px;
-        font-size: 14px;
-    `;
+    margin: 0 0 10px;
+    font-size: 14px;
+  `;
 
   const reasons = document.createElement("p");
 
@@ -176,10 +311,10 @@ function createRecommendationCard(media) {
     : "";
 
   reasons.style.cssText = `
-        margin: 0 0 10px;
-        font-size: 13px;
-        opacity: 0.9;
-    `;
+    margin: 0 0 10px;
+    font-size: 13px;
+    opacity: 0.9;
+  `;
 
   const score = document.createElement("p");
 
@@ -190,10 +325,10 @@ function createRecommendationCard(media) {
     : "Prototype relevance score unavailable";
 
   score.style.cssText = `
-        margin: 0;
-        font-size: 13px;
-        font-weight: 600;
-    `;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+  `;
 
   card.append(title, details, genres, reasons, score);
 
@@ -203,11 +338,12 @@ function createRecommendationCard(media) {
 // Show Recommendations
 
 function showRecommendations(data, preferences) {
-  const recommendations = Array.isArray(data.recommendations)
+  const recommendations = Array.isArray(data?.recommendations)
     ? data.recommendations
     : [];
 
   const heading = document.createElement("h3");
+
   heading.textContent = "Your Compass Recommendations ✦";
 
   const summary = document.createElement("p");
@@ -218,52 +354,39 @@ function showRecommendations(data, preferences) {
     `${compassLabels.available_time[preferences.available_time]} · ` +
     `${compassLabels.content_type[preferences.content_type]}`;
 
-  compassPreview.replaceChildren(heading, summary);
+  const count = recommendations.length;
 
-  if (recommendations.length === 0) {
-    const message = document.createElement("p");
+  const statusNotice = createRecommendationStatus(data, preferences, count);
 
-    message.textContent =
-      "No exact matches were found. Try another emotion, " +
-      "time limit, or content type.";
+  compassPreview.replaceChildren(heading, summary, statusNotice);
 
-    compassPreview.append(message);
-  } else {
-    recommendations.forEach((media) => {
-      const card = createRecommendationCard(media);
-      compassPreview.append(card);
-    });
-  }
+  // Recommendation Results
 
-  if (recommendations.length < 3) {
-    const notice = document.createElement("p");
+  recommendations.forEach((media) => {
+    const card = createRecommendationCard(media);
 
-    notice.textContent =
-      `Only ${recommendations.length} matching title(s) ` +
-      "were found in the current test catalog.";
+    compassPreview.append(card);
+  });
 
-    notice.style.cssText = `
-            margin-top: 16px;
-            font-size: 13px;
-            opacity: 0.8;
-        `;
-
-    compassPreview.append(notice);
-  }
+  // Research Disclaimer
 
   const disclaimer = document.createElement("p");
 
   disclaimer.textContent =
     "These are preliminary recommendations based on " +
-    "test catalog tags, not verified predictions.";
+    "technical emotional tags. Relevance scores are " +
+    "heuristic and have not been validated through " +
+    "independent user research.";
 
   disclaimer.style.cssText = `
-        margin-top: 12px;
-        font-size: 12px;
-        opacity: 0.75;
-    `;
+    margin-top: 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    opacity: 0.75;
+  `;
 
   compassPreview.append(disclaimer);
+
   compassPreview.hidden = false;
 
   compassPreview.scrollIntoView({
@@ -301,6 +424,7 @@ compassForm.addEventListener("submit", async (event) => {
   compassSubmitButton.disabled = true;
 
   const originalButtonText = compassSubmitButton.textContent;
+
   compassSubmitButton.textContent = "SEARCHING...";
 
   showCompassMessage(
