@@ -16,96 +16,126 @@ const statuses = ["completed", "incomplete", "dropped"];
 // Validation
 
 function validateEntry(body) {
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
-        return "Invalid entry data.";
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return "Invalid entry data.";
+  }
+
+  const { category, title, status, rating, length } = body;
+
+  if (!categories.includes(category)) {
+    return "Invalid category.";
+  }
+
+  if (
+    typeof title !== "string" ||
+    title.trim().length === 0 ||
+    title.trim().length > 255
+  ) {
+    return "Title must contain 1 to 255 characters.";
+  }
+
+  if (!statuses.includes(status)) {
+    return "Invalid status.";
+  }
+
+  const textLimits = {
+    genre: 100,
+    description: 20000,
+    review: 20000,
+  };
+
+  for (const [field, limit] of Object.entries(textLimits)) {
+    const value = body[field];
+
+    if (value === undefined || value === null) {
+      continue;
     }
 
-    const { category, title, status, rating, length } = body;
-
-    if (!categories.includes(category)) {
-        return "Invalid category.";
+    if (typeof value !== "string" || value.length > limit) {
+      return `Invalid ${field}. Maximum length: ${limit}.`;
     }
+  }
 
+  if (rating !== null && rating !== undefined && rating !== "") {
     if (
-        typeof title !== "string" ||
-        title.trim().length === 0 ||
-        title.trim().length > 255
+      typeof rating !== "number" ||
+      !Number.isFinite(rating) ||
+      rating < 0.5 ||
+      rating > 5 ||
+      !Number.isInteger(rating * 2)
     ) {
-        return "Title must contain 1 to 255 characters.";
+      return "Rating must be between 0.5 and 5 in steps of 0.5.";
+    }
+  }
+
+  if (length !== null && length !== undefined && length !== "") {
+    if (
+      typeof length !== "number" ||
+      !Number.isFinite(length) ||
+      length < 0 ||
+      length > 1000000
+    ) {
+      return "Invalid length.";
     }
 
-    if (!statuses.includes(status)) {
-        return "Invalid status.";
+    if (category === "game") {
+      if (
+        !Number.isInteger(Math.round(length * 10)) ||
+        Math.abs(length * 10 - Math.round(length * 10)) > 0.000001
+      ) {
+        return "Playtime must use steps of 0.1 hours.";
+      }
+    } else if (!Number.isInteger(length)) {
+      return "Length must be a whole number.";
     }
+  }
 
-    const textLimits = {
-        genre: 100,
-        description: 20000,
-        review: 20000
-    };
+  return null;
+}
 
-    for (const [field, limit] of Object.entries(textLimits)) {
-        const value = body[field];
+// Genre Validation
 
-        if (value === undefined || value === null) {
-            continue;
-        }
+async function validateCanonicalGenreString(value) {
+  if (value === undefined || value === null || value === "") return null;
 
-        if (typeof value !== "string" || value.length > limit) {
-            return `Invalid ${field}. Maximum length: ${limit}.`;
-        }
-    }
+  const names = value.split(",").map((name) => name.trim());
 
-    if (rating !== null && rating !== undefined && rating !== "") {
-        if (
-            typeof rating !== "number" ||
-            !Number.isFinite(rating) ||
-            rating < 0.5 ||
-            rating > 5 ||
-            !Number.isInteger(rating * 2)
-        ) {
-            return "Rating must be between 0.5 and 5 in steps of 0.5.";
-        }
-    }
+  if (
+    names.length > 5 ||
+    names.some((name) => !name) ||
+    new Set(names).size !== names.length ||
+    names.join(", ") !== value
+  ) {
+    return "Select up to 5 distinct genres from the available list.";
+  }
 
-    if (length !== null && length !== undefined && length !== "") {
-        if (
-            typeof length !== "number" ||
-            !Number.isFinite(length) ||
-            length < 0 ||
-            length > 1000000
-        ) {
-            return "Invalid length.";
-        }
+  const result = await pool.query(
+    "SELECT name FROM public.genres WHERE name = ANY($1::text[])",
+    [names],
+  );
 
-        if (category === "game") {
-            if (!Number.isInteger(Math.round(length * 10)) ||
-                Math.abs(length * 10 - Math.round(length * 10)) > 0.000001) {
-                return "Playtime must use steps of 0.1 hours.";
-            }
-        } else if (!Number.isInteger(length)) {
-            return "Length must be a whole number.";
-        }
-    }
+  if (result.rowCount !== names.length) {
+    return "One or more selected genres are not in the genre list.";
+  }
 
-    return null;
+  return null;
 }
 
 // Entries
 
 router.get("/", async (req, res) => {
-    const category = req.query.category;
+  const category = req.query.category;
 
-    if (category !== undefined && !categories.includes(category)) {
-        return res.status(400).json({
-            message: "Invalid category."
-        });
-    }
+  if (category !== undefined && !categories.includes(category)) {
+    return res.status(400).json({
+      message: "Invalid category.",
+    });
+  }
 
-    try {
-        const values = [req.userId];
+  try {
+    const values = [req.userId];
 
-        let query = `
+    let query = `
             SELECT
                 id,
                 title,
@@ -126,78 +156,81 @@ router.get("/", async (req, res) => {
             WHERE user_id = $1
         `;
 
-        if (category) {
-            query += " AND category = $2";
-            values.push(category);
-        }
-
-        query += " ORDER BY created_at DESC, id DESC";
-
-        const result = await pool.query(query, values);
-
-        res.json({
-            entries: result.rows
-        });
-    } catch (error) {
-        console.error("Get entries error:", error);
-
-        res.status(500).json({
-            message: "Could not load entries."
-        });
+    if (category) {
+      query += " AND category = $2";
+      values.push(category);
     }
+
+    query += " ORDER BY created_at DESC, id DESC";
+
+    const result = await pool.query(query, values);
+
+    res.json({
+      entries: result.rows,
+    });
+  } catch (error) {
+    console.error("Get entries error:", error);
+
+    res.status(500).json({
+      message: "Could not load entries.",
+    });
+  }
 });
 
 // Save
 
 router.post("/", async (req, res) => {
-    const errorMessage = validateEntry(req.body);
+  const errorMessage = validateEntry(req.body);
 
-    if (errorMessage) {
-        return res.status(400).json({
-            message: errorMessage
-        });
+  if (errorMessage) {
+    return res.status(400).json({
+      message: errorMessage,
+    });
+  }
+
+  const {
+    category,
+    title,
+    genre,
+    description,
+    review,
+    status,
+    rating,
+    length,
+  } = req.body;
+
+  const mediaLength =
+    length === undefined || length === null || length === "" ? null : length;
+
+  let totalEpisodes = null;
+  let totalPages = null;
+  let durationMinutes = null;
+  let playtimeHours = null;
+
+  if (category === "anime" || category === "series") {
+    totalEpisodes = mediaLength;
+  }
+
+  if (category === "book") {
+    totalPages = mediaLength;
+  }
+
+  if (category === "movie") {
+    durationMinutes = mediaLength;
+  }
+
+  if (category === "game") {
+    playtimeHours = mediaLength;
+  }
+
+  try {
+    const genreError = await validateCanonicalGenreString(genre);
+    if (genreError) {
+      return res.status(400).json({ message: genreError });
     }
 
-    const {
-        category,
-        title,
-        genre,
-        description,
-        review,
-        status,
-        rating,
-        length
-    } = req.body;
-
-    const mediaLength =
-        length === undefined || length === null || length === ""
-            ? null
-            : length;
-
-    let totalEpisodes = null;
-    let totalPages = null;
-    let durationMinutes = null;
-    let playtimeHours = null;
-
-    if (category === "anime" || category === "series") {
-        totalEpisodes = mediaLength;
-    }
-
-    if (category === "book") {
-        totalPages = mediaLength;
-    }
-
-    if (category === "movie") {
-        durationMinutes = mediaLength;
-    }
-
-    if (category === "game") {
-        playtimeHours = mediaLength;
-    }
-
-    try {
-        const result = await pool.query(
-            `
+    const result = await pool.query(
+      `
             INSERT INTO entries (
                 user_id,
                 title,
@@ -219,90 +252,99 @@ router.post("/", async (req, res) => {
             )
             RETURNING *
             `,
-            [
-                req.userId,
-                title.trim(),
-                category,
-                genre?.trim() || null,
-                description?.trim() || null,
-                review?.trim() || null,
-                status,
-                rating === undefined || rating === null || rating === ""
-                    ? null
-                    : rating,
-                totalEpisodes,
-                totalPages,
-                durationMinutes,
-                playtimeHours
-            ]
-        );
+      [
+        req.userId,
+        title.trim(),
+        category,
+        genre?.trim() || null,
+        description?.trim() || null,
+        review?.trim() || null,
+        status,
+        rating === undefined || rating === null || rating === ""
+          ? null
+          : rating,
+        totalEpisodes,
+        totalPages,
+        durationMinutes,
+        playtimeHours,
+      ],
+    );
 
-        res.status(201).json({
-            message: "Entry created successfully.",
-            entry: result.rows[0]
-        });
-    } catch (error) {
-        console.error("Create entry error:", error);
+    res.status(201).json({
+      message: "Entry created successfully.",
+      entry: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Create entry error:", error);
 
-        res.status(500).json({
-            message: "Could not save entry."
-        });
-    }
+    res.status(500).json({
+      message: "Could not save entry.",
+    });
+  }
 });
-
 
 // Update
 
 router.put("/:id", async (req, res) => {
-    const entryId = req.params.id;
+  const entryId = req.params.id;
 
-    if (!/^[1-9]\d*$/.test(entryId)) {
-        return res.status(400).json({
-            message: "Invalid entry ID."
-        });
+  if (!/^[1-9]\d*$/.test(entryId)) {
+    return res.status(400).json({
+      message: "Invalid entry ID.",
+    });
+  }
+
+  const errorMessage = validateEntry(req.body);
+
+  if (errorMessage) {
+    return res.status(400).json({
+      message: errorMessage,
+    });
+  }
+
+  const {
+    category,
+    title,
+    genre,
+    description,
+    review,
+    status,
+    rating,
+    length,
+  } = req.body;
+
+  const mediaLength =
+    length === undefined || length === null || length === "" ? null : length;
+
+  const totalEpisodes =
+    category === "anime" || category === "series" ? mediaLength : null;
+
+  const totalPages = category === "book" ? mediaLength : null;
+
+  const durationMinutes = category === "movie" ? mediaLength : null;
+
+  const playtimeHours = category === "game" ? mediaLength : null;
+
+  try {
+    const previous = await pool.query(
+      "SELECT genre FROM entries WHERE id = $1 AND user_id = $2",
+      [entryId, req.userId],
+    );
+    if (previous.rowCount === 0) {
+      return res.status(404).json({ message: "Entry not found." });
     }
 
-    const errorMessage = validateEntry(req.body);
-
-    if (errorMessage) {
-        return res.status(400).json({
-            message: errorMessage
-        });
+    // Preserve an existing legacy genre string when it is not edited.
+    const oldGenre = previous.rows[0].genre || "";
+    if ((genre || "") !== oldGenre) {
+      const genreError = await validateCanonicalGenreString(genre);
+      if (genreError) {
+        return res.status(400).json({ message: genreError });
+      }
     }
 
-    const {
-        category,
-        title,
-        genre,
-        description,
-        review,
-        status,
-        rating,
-        length
-    } = req.body;
-
-    const mediaLength =
-        length === undefined || length === null || length === ""
-            ? null
-            : length;
-
-    const totalEpisodes =
-        category === "anime" || category === "series"
-            ? mediaLength
-            : null;
-
-    const totalPages =
-        category === "book" ? mediaLength : null;
-
-    const durationMinutes =
-        category === "movie" ? mediaLength : null;
-
-    const playtimeHours =
-        category === "game" ? mediaLength : null;
-
-    try {
-        const result = await pool.query(
-            `
+    const result = await pool.query(
+      `
             UPDATE entries
             SET
             title = $1,
@@ -320,103 +362,101 @@ router.put("/:id", async (req, res) => {
     WHERE id = $12 AND user_id = $13
     RETURNING *
             `,
-            [
-                title.trim(),
-                category,
-                genre?.trim() || null,
-                description?.trim() || null,
-                review?.trim() || null,
-                status,
-                rating === undefined || rating === null || rating === ""
-                    ? null
-                    : rating,
-                totalEpisodes,
-                totalPages,
-                durationMinutes,
-                playtimeHours,
-                entryId,
-                req.userId
-            ]
-        );
+      [
+        title.trim(),
+        category,
+        genre?.trim() || null,
+        description?.trim() || null,
+        review?.trim() || null,
+        status,
+        rating === undefined || rating === null || rating === ""
+          ? null
+          : rating,
+        totalEpisodes,
+        totalPages,
+        durationMinutes,
+        playtimeHours,
+        entryId,
+        req.userId,
+      ],
+    );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                message: "Entry not found."
-            });
-        }
-
-        res.json({
-            message: "Entry updated successfully.",
-            entry: result.rows[0]
-        });
-    } catch (error) {
-        console.error("Update entry error:", error);
-
-        res.status(500).json({
-            message: "Could not update entry."
-        });
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Entry not found.",
+      });
     }
-});
 
+    res.json({
+      message: "Entry updated successfully.",
+      entry: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Update entry error:", error);
+
+    res.status(500).json({
+      message: "Could not update entry.",
+    });
+  }
+});
 
 // Delete
 
 router.delete("/:id", async (req, res) => {
-    const entryId = req.params.id;
+  const entryId = req.params.id;
 
-    if (!/^[1-9]\d*$/.test(entryId)) {
-        return res.status(400).json({
-            message: "Invalid entry ID."
-        });
-    }
+  if (!/^[1-9]\d*$/.test(entryId)) {
+    return res.status(400).json({
+      message: "Invalid entry ID.",
+    });
+  }
 
-    try {
-        const result = await pool.query(
-            `
+  try {
+    const result = await pool.query(
+      `
             DELETE FROM entries
             WHERE id = $1 AND user_id = $2
             RETURNING id, image_url
             `,
-            [entryId, req.userId]
-        );
+      [entryId, req.userId],
+    );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                message: "Entry not found."
-            });
-        }
-
-        const photoPath = path.join(
-            process.env.RAILWAY_VOLUME_MOUNT_PATH ||
-        path.join(__dirname, "..", "uploads"),
-    `${entryId}.webp`
-       );
-
-
-        console.log("Deleting entry:", entryId);
-        console.log("Photo path:", photoPath);
-
-        try {
-            await fs.unlink(photoPath);
-            console.log("Photo deleted successfully:", entryId);
-        } catch (fileError) {
-            if (fileError.code === "ENOENT") {
-                console.log("Photo file not found:", entryId);
-            } else {
-                console.error("Delete photo error:", fileError);
-            }
-        }
-
-        res.json({
-            message: "Entry deleted successfully."
-        });
-    } catch (error) {
-        console.error("Delete entry error:", error);
-
-        res.status(500).json({
-            message: "Could not delete entry."
-        });
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Entry not found.",
+      });
     }
+
+    const photoPath = path.join(
+      process.env.RAILWAY_VOLUME_MOUNT_PATH ||
+        path.join(__dirname, "..", "uploads"),
+      `${entryId}.webp`,
+    );
+
+    console.log("Deleting entry:", entryId);
+    console.log("Photo path:", photoPath);
+
+    try {
+      await fs.unlink(photoPath);
+      console.log("Photo deleted successfully:", entryId);
+    } catch (fileError) {
+      if (fileError.code === "ENOENT") {
+        console.log("Photo file not found:", entryId);
+      } else {
+        console.error("Delete photo error:", fileError);
+      }
+    }
+
+    res.json({
+      message: "Entry deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Delete entry error:", error);
+
+    res.status(500).json({
+      message: "Could not delete entry.",
+    });
+  }
 });
 
 module.exports = router;

@@ -1,48 +1,48 @@
 // Categories
 
 const categories = {
-    anime: {
-        title: "MY ANIME LIST",
-        total: "TOTAL ANIME",
-        search: "Search anime in my list...",
-        length: "Total Episodes:",
-        step: "1"
-    },
-    series: {
-        title: "MY SERIES LIST",
-        total: "TOTAL SERIES",
-        search: "Search series in my list...",
-        length: "Total Episodes:",
-        step: "1"
-    },
-    movie: {
-        title: "MY MOVIE LIST",
-        total: "TOTAL MOVIES",
-        search: "Search movies in my list...",
-        length: "Duration (minutes):",
-        step: "1"
-    },
-    book: {
-        title: "MY READING LIST",
-        total: "TOTAL BOOKS",
-        search: "Search books in my list...",
-        length: "Total Pages:",
-        step: "1"
-    },
-    game: {
-        title: "MY GAME LIST",
-        total: "TOTAL GAMES",
-        search: "Search games in my list...",
-        length: "Playtime (hours):",
-        step: "0.1"
-    }
+  anime: {
+    title: "MY ANIME LIST",
+    total: "TOTAL ANIME",
+    search: "Search anime in my list...",
+    length: "Total Episodes:",
+    step: "1",
+  },
+  series: {
+    title: "MY SERIES LIST",
+    total: "TOTAL SERIES",
+    search: "Search series in my list...",
+    length: "Total Episodes:",
+    step: "1",
+  },
+  movie: {
+    title: "MY MOVIE LIST",
+    total: "TOTAL MOVIES",
+    search: "Search movies in my list...",
+    length: "Duration (minutes):",
+    step: "1",
+  },
+  book: {
+    title: "MY READING LIST",
+    total: "TOTAL BOOKS",
+    search: "Search books in my list...",
+    length: "Total Pages:",
+    step: "1",
+  },
+  game: {
+    title: "MY GAME LIST",
+    total: "TOTAL GAMES",
+    search: "Search games in my list...",
+    length: "Playtime (hours):",
+    step: "0.1",
+  },
 };
 
 const params = new URLSearchParams(window.location.search);
 const requestedCategory = params.get("category");
 const currentCategory = categories[requestedCategory]
-    ? requestedCategory
-    : "anime";
+  ? requestedCategory
+  : "anime";
 
 // Elements
 
@@ -70,7 +70,7 @@ const ratingInput = document.getElementById("entry-rating");
 const ratingValue = document.getElementById("entry-rating-value");
 
 const textFields = document.querySelectorAll(
-    "#entry-description, #entry-review-text"
+  "#entry-description, #entry-review-text",
 );
 
 let savedEntries = [];
@@ -80,194 +80,320 @@ let editingEntryId = null;
 let photoUrl = null;
 let removePhotoRequested = false;
 
+// Genre Selection
+
+const genrePicker = document.getElementById("entry-genre-picker");
+const genreOptions = document.getElementById("entry-genre-options");
+const genreSelection = document.getElementById("entry-genre-selection");
+const genreHint = document.getElementById("entry-genre-hint");
+const genreInput = document.getElementById("entry-genre-value");
+const MAX_ENTRY_GENRES = 5;
+const MAX_ENTRY_GENRE_LENGTH = 100;
+
+const availableEntryGenres = [];
+const selectedEntryGenres = new Set();
+let legacyGenreValue = null;
+let genreSelectionChanged = false;
+let genresLoaded = false;
+
+function serializedEntryGenres(names = [...selectedEntryGenres]) {
+  return names.join(", ");
+}
+
+function updateGenrePicker() {
+  const names = [...selectedEntryGenres];
+  const value = serializedEntryGenres(names);
+
+  genreInput.value =
+    legacyGenreValue !== null && !genreSelectionChanged
+      ? legacyGenreValue
+      : value;
+
+  genreSelection.textContent =
+    names.length > 0 ? names.join(", ") : "Select genres...";
+
+  if (legacyGenreValue !== null && !genreSelectionChanged) {
+    genreSelection.textContent = legacyGenreValue || "Select genres...";
+    genreHint.textContent =
+      "Saved custom genres are preserved until you change the selection.";
+  } else if (genresLoaded) {
+    genreHint.textContent = `${names.length}/${MAX_ENTRY_GENRES} selected · Max ${MAX_ENTRY_GENRE_LENGTH} characters`;
+  }
+
+  genreOptions.querySelectorAll(".entry-genre-option").forEach((button) => {
+    const name = button.dataset.genre;
+    const selected = selectedEntryGenres.has(name);
+    const wouldBeTooLong =
+      serializedEntryGenres([...names, name]).length > MAX_ENTRY_GENRE_LENGTH;
+    button.setAttribute("aria-pressed", String(selected));
+    button.disabled =
+      !selected && (names.length >= MAX_ENTRY_GENRES || wouldBeTooLong);
+  });
+}
+
+function resetGenrePicker() {
+  selectedEntryGenres.clear();
+  legacyGenreValue = null;
+  genreSelectionChanged = false;
+  genrePicker.open = false;
+  updateGenrePicker();
+}
+
+function restoreEntryGenres(savedValue) {
+  const raw = typeof savedValue === "string" ? savedValue : "";
+  const names = raw
+    ? raw
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean)
+    : [];
+  const knownNames = new Set(availableEntryGenres);
+
+  selectedEntryGenres.clear();
+  names.forEach((name) => {
+    if (knownNames.has(name)) selectedEntryGenres.add(name);
+  });
+
+  // Preserve legacy strings (including unknown spellings or formats)
+  // until the user explicitly changes the selection.
+  legacyGenreValue =
+    !genresLoaded ||
+    names.length > MAX_ENTRY_GENRES ||
+    names.length !== selectedEntryGenres.size ||
+    serializedEntryGenres(names) !== raw
+      ? raw
+      : null;
+  genreSelectionChanged = false;
+  updateGenrePicker();
+}
+
+function renderEntryGenres() {
+  genreOptions.replaceChildren();
+
+  availableEntryGenres.forEach((name) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "entry-genre-option";
+    button.dataset.genre = name;
+    button.textContent = name;
+    button.setAttribute("aria-pressed", "false");
+
+    button.addEventListener("click", () => {
+      genreSelectionChanged = true;
+      legacyGenreValue = null;
+      if (selectedEntryGenres.has(name)) {
+        selectedEntryGenres.delete(name);
+      } else {
+        selectedEntryGenres.add(name);
+      }
+      updateGenrePicker();
+    });
+    genreOptions.appendChild(button);
+  });
+  updateGenrePicker();
+}
+
+async function loadEntryGenres() {
+  try {
+    const response = await fetch("/api/compass/onboarding/options", {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error("Could not load available genres.");
+    const data = await response.json();
+    if (!Array.isArray(data.genres))
+      throw new Error("Invalid genres response.");
+
+    availableEntryGenres.splice(
+      0,
+      availableEntryGenres.length,
+      ...data.genres
+        .filter((item) => item && typeof item.name === "string")
+        .map((item) => item.name.trim())
+        .filter(Boolean),
+    );
+    genresLoaded = true;
+    renderEntryGenres();
+  } catch (error) {
+    console.error("Load genres error:", error);
+    genreHint.textContent =
+      "Genre options unavailable. Try refreshing the page.";
+  }
+}
+
 // Navigation
 
 document.getElementById("library-title").textContent =
-    categories[currentCategory].title;
+  categories[currentCategory].title;
 
 document.getElementById("total-label").textContent =
-    categories[currentCategory].total;
+  categories[currentCategory].total;
 
 searchField.placeholder = categories[currentCategory].search;
 
 document.getElementById("entry-length-label").textContent =
-    categories[currentCategory].length;
+  categories[currentCategory].length;
 
-entryForm.elements.namedItem("length").step =
-    categories[currentCategory].step;
+entryForm.elements.namedItem("length").step = categories[currentCategory].step;
 
-document.querySelectorAll(".main-nav a").forEach(link => {
-    if (link.dataset.category === currentCategory) {
-        link.classList.add("active");
-        link.setAttribute("aria-current", "page");
-    }
+document.querySelectorAll(".main-nav a").forEach((link) => {
+  if (link.dataset.category === currentCategory) {
+    link.classList.add("active");
+    link.setAttribute("aria-current", "page");
+  }
 });
 
 // Authentication
 
 async function checkSession() {
-    try {
-        const response = await fetch("/api/auth/me", {
-            credentials: "same-origin"
-        });
+  try {
+    const response = await fetch("/api/auth/me", {
+      credentials: "same-origin",
+    });
 
-        if (!response.ok) {
-            window.location.replace("/");
-            return false;
-        }
-
-        return true;
-    } catch (error) {
-        console.error("Session error:", error);
-        window.location.replace("/");
-        return false;
+    if (!response.ok) {
+      window.location.replace("/");
+      return false;
     }
+
+    return true;
+  } catch (error) {
+    console.error("Session error:", error);
+    window.location.replace("/");
+    return false;
+  }
 }
 
 // Logout
 
 document.getElementById("logout-btn").addEventListener("click", async () => {
-    try {
-        const response = await fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "same-origin"
-        });
+  try {
+    const response = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+    });
 
-        if (!response.ok) {
-            throw new Error("Could not log out.");
-        }
-
-        window.location.replace("/");
-    } catch (error) {
-        dashboardMessage.textContent = error.message;
+    if (!response.ok) {
+      throw new Error("Could not log out.");
     }
+
+    window.location.replace("/");
+  } catch (error) {
+    dashboardMessage.textContent = error.message;
+  }
 });
 
 // Text
 
 function resizeTextField(field) {
-    field.style.height = "auto";
-    field.style.height = `${field.scrollHeight + 2}px`;
+  field.style.height = "auto";
+  field.style.height = `${field.scrollHeight + 2}px`;
 }
 
-textFields.forEach(field => {
-    field.addEventListener("input", () => {
-        resizeTextField(field);
-    });
+textFields.forEach((field) => {
+  field.addEventListener("input", () => {
+    resizeTextField(field);
+  });
 });
 
-entryForm.addEventListener("keydown", event => {
-    if (
-        event.key === "Enter" &&
-        event.target.matches('input[type="text"], input[type="number"]')
-    ) {
-        event.preventDefault();
-    }
+entryForm.addEventListener("keydown", (event) => {
+  if (
+    event.key === "Enter" &&
+    event.target.matches('input[type="text"], input[type="number"]')
+  ) {
+    event.preventDefault();
+  }
 });
 
 // Photo
 
 function clearPhoto() {
-    if (photoUrl) {
-        URL.revokeObjectURL(photoUrl);
-        photoUrl = null;
-    }
+  if (photoUrl) {
+    URL.revokeObjectURL(photoUrl);
+    photoUrl = null;
+  }
 
-    photoInput.value = "";
-    photoPreview.hidden = true;
-    photoPreview.removeAttribute("src");
-    photoLabel.classList.remove("has-image");
+  photoInput.value = "";
+  photoPreview.hidden = true;
+  photoPreview.removeAttribute("src");
+  photoLabel.classList.remove("has-image");
 
-    removePhotoButton.hidden = true;
-    removePhotoRequested = false;
+  removePhotoButton.hidden = true;
+  removePhotoRequested = false;
 }
 
 photoInput.addEventListener("change", () => {
-    const file = photoInput.files[0];
+  const file = photoInput.files[0];
 
-    if (!file) {
-        return;
-    }
+  if (!file) {
+    return;
+  }
 
-    const allowedTypes = [
-        "image/png",
-        "image/jpeg",
-        "image/webp",
-        "image/gif"
-    ];
+  const allowedTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 
-    if (
-        !allowedTypes.includes(file.type) ||
-        file.size > 5 * 1024 * 1024
-    ) {
-        photoInput.value = "";
-        saveMessage.textContent =
-            "Choose a PNG, JPG, WEBP or GIF image up to 5 MB.";
-        return;
-    }
+  if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
+    photoInput.value = "";
+    saveMessage.textContent =
+      "Choose a PNG, JPG, WEBP or GIF image up to 5 MB.";
+    return;
+  }
 
-    if (photoUrl) {
-        URL.revokeObjectURL(photoUrl);
-    }
+  if (photoUrl) {
+    URL.revokeObjectURL(photoUrl);
+  }
 
-    photoUrl = URL.createObjectURL(file);
-    photoPreview.src = photoUrl;
-    photoPreview.hidden = false;
-    photoLabel.classList.add("has-image");
-    removePhotoButton.hidden = false;
-    removePhotoRequested = false;
+  photoUrl = URL.createObjectURL(file);
+  photoPreview.src = photoUrl;
+  photoPreview.hidden = false;
+  photoLabel.classList.add("has-image");
+  removePhotoButton.hidden = false;
+  removePhotoRequested = false;
 
-    saveMessage.textContent = "";
+  saveMessage.textContent = "";
 });
 
 photoPreview.addEventListener("error", () => {
-    photoPreview.hidden = true;
-    photoLabel.classList.remove("has-image");
-    saveMessage.textContent = "Could not preview the photo.";
+  photoPreview.hidden = true;
+  photoLabel.classList.remove("has-image");
+  saveMessage.textContent = "Could not preview the photo.";
 });
 
 removePhotoButton.addEventListener("click", () => {
-    const existingEntry = savedEntries.find(entry => {
-        return String(entry.id) === String(editingEntryId);
-    });
+  const existingEntry = savedEntries.find((entry) => {
+    return String(entry.id) === String(editingEntryId);
+  });
 
-    const hasStoredPhoto = Boolean(existingEntry?.image_url);
+  const hasStoredPhoto = Boolean(existingEntry?.image_url);
 
-    clearPhoto();
-    removePhotoRequested = hasStoredPhoto;
-    saveMessage.textContent = "";
+  clearPhoto();
+  removePhotoRequested = hasStoredPhoto;
+  saveMessage.textContent = "";
 });
 
 // Rating
 
 function updateRating() {
-    const buttons = ratingContainer.querySelectorAll(".star-button");
+  const buttons = ratingContainer.querySelectorAll(".star-button");
 
-    buttons.forEach((button, index) => {
-        const filledPart = Math.max(
-            0,
-            Math.min(1, selectedRating - index)
-        );
+  buttons.forEach((button, index) => {
+    const filledPart = Math.max(0, Math.min(1, selectedRating - index));
 
-        button.querySelector(".star-fill").style.width =
-            `${filledPart * 100}%`;
-    });
+    button.querySelector(".star-fill").style.width = `${filledPart * 100}%`;
+  });
 
-    ratingInput.value = selectedRating === 0
-        ? ""
-        : String(selectedRating);
+  ratingInput.value = selectedRating === 0 ? "" : String(selectedRating);
 
-    ratingValue.textContent = `(${selectedRating}/5)`;
+  ratingValue.textContent = `(${selectedRating}/5)`;
 }
 
 for (let number = 1; number <= 5; number++) {
-    const button = document.createElement("button");
+  const button = document.createElement("button");
 
-    button.type = "button";
-    button.className = "star-button";
-    button.setAttribute("aria-label", `Rate ${number} stars`);
+  button.type = "button";
+  button.className = "star-button";
+  button.setAttribute("aria-label", `Rate ${number} stars`);
 
-    button.innerHTML = `
+  button.innerHTML = `
         <img class="star-base" src="assets/star-empty.png" alt="">
         <span class="star-fill" aria-hidden="true">
             <img
@@ -278,23 +404,20 @@ for (let number = 1; number <= 5; number++) {
         </span>
     `;
 
-    button.addEventListener("click", event => {
-        const rect = button.getBoundingClientRect();
+  button.addEventListener("click", (event) => {
+    const rect = button.getBoundingClientRect();
 
-        const leftHalf =
-            event.detail !== 0 &&
-            event.clientX - rect.left < rect.width / 2;
+    const leftHalf =
+      event.detail !== 0 && event.clientX - rect.left < rect.width / 2;
 
-        const newRating = number - (leftHalf ? 0.5 : 0);
+    const newRating = number - (leftHalf ? 0.5 : 0);
 
-        selectedRating = selectedRating === newRating
-            ? 0
-            : newRating;
+    selectedRating = selectedRating === newRating ? 0 : newRating;
 
-        updateRating();
-    });
+    updateRating();
+  });
 
-    ratingContainer.appendChild(button);
+  ratingContainer.appendChild(button);
 }
 
 updateRating();
@@ -302,523 +425,506 @@ updateRating();
 // Modal
 
 function resetEntryForm() {
-    entryForm.reset();
-    clearPhoto();
+  entryForm.reset();
+  resetGenrePicker();
+  clearPhoto();
 
-    editingEntryId = null;
-    selectedRating = 0;
+  editingEntryId = null;
+  selectedRating = 0;
 
-    updateRating();
+  updateRating();
 
-    deleteButton.hidden = true;
-    saveButton.textContent = "SAVE";
-    saveMessage.textContent = "";
+  deleteButton.hidden = true;
+  saveButton.textContent = "SAVE";
+  saveMessage.textContent = "";
 }
 
 function openNewEntry() {
-    resetEntryForm();
+  resetEntryForm();
 
-    entryDialog.setAttribute("aria-label", "Add new entry");
-    entryDialog.showModal();
+  entryDialog.setAttribute("aria-label", "Add new entry");
+  entryDialog.showModal();
 
-    textFields.forEach(resizeTextField);
-    document.querySelector(".entry-dialog-scroll").scrollTop = 0;
+  textFields.forEach(resizeTextField);
+  document.querySelector(".entry-dialog-scroll").scrollTop = 0;
 }
 
 function getEntryLength(entry) {
-    if (currentCategory === "anime" || currentCategory === "series") {
-        return entry.total_episodes ?? "";
-    }
+  if (currentCategory === "anime" || currentCategory === "series") {
+    return entry.total_episodes ?? "";
+  }
 
-    if (currentCategory === "movie") {
-        return entry.duration_minutes ?? "";
-    }
+  if (currentCategory === "movie") {
+    return entry.duration_minutes ?? "";
+  }
 
-    if (currentCategory === "book") {
-        return entry.total_pages ?? "";
-    }
+  if (currentCategory === "book") {
+    return entry.total_pages ?? "";
+  }
 
-    if (currentCategory === "game") {
-        return entry.playtime_hours ?? "";
-    }
+  if (currentCategory === "game") {
+    return entry.playtime_hours ?? "";
+  }
 
-    return "";
+  return "";
 }
 
 function openEditEntry(entry) {
-    resetEntryForm();
+  resetEntryForm();
 
-    editingEntryId = entry.id;
+  editingEntryId = entry.id;
 
-    entryForm.elements.namedItem("title").value = entry.title;
-    entryForm.elements.namedItem("genre").value = entry.genre ?? "";
-    entryForm.elements.namedItem("status").value = entry.status;
-    entryForm.elements.namedItem("length").value = getEntryLength(entry);
+  entryForm.elements.namedItem("title").value = entry.title;
+  restoreEntryGenres(entry.genre);
+  entryForm.elements.namedItem("status").value = entry.status;
+  entryForm.elements.namedItem("length").value = getEntryLength(entry);
 
-    document.getElementById("entry-description").value =
-        entry.description ?? "";
+  document.getElementById("entry-description").value = entry.description ?? "";
 
-    document.getElementById("entry-review-text").value =
-        entry.review ?? "";
+  document.getElementById("entry-review-text").value = entry.review ?? "";
 
-    selectedRating = entry.rating === null
-        ? 0
-        : Number(entry.rating);
+  selectedRating = entry.rating === null ? 0 : Number(entry.rating);
 
-    updateRating();
+  updateRating();
 
-    if (entry.image_url) {
-        photoPreview.src = entry.image_url;
-        photoPreview.hidden = false;
-        photoLabel.classList.add("has-image");
-        removePhotoButton.hidden = false;
-    }
+  if (entry.image_url) {
+    photoPreview.src = entry.image_url;
+    photoPreview.hidden = false;
+    photoLabel.classList.add("has-image");
+    removePhotoButton.hidden = false;
+  }
 
-    deleteButton.hidden = false;
-    saveButton.textContent = "SAVE CHANGES";
+  deleteButton.hidden = false;
+  saveButton.textContent = "SAVE CHANGES";
 
-    entryDialog.setAttribute("aria-label", `Edit ${entry.title}`);
-    entryDialog.showModal();
+  entryDialog.setAttribute("aria-label", `Edit ${entry.title}`);
+  entryDialog.showModal();
 
-    textFields.forEach(resizeTextField);
-    document.querySelector(".entry-dialog-scroll").scrollTop = 0;
+  textFields.forEach(resizeTextField);
+  document.querySelector(".entry-dialog-scroll").scrollTop = 0;
 }
 
 addNewButton.addEventListener("click", openNewEntry);
 
-document.getElementById("close-entry-dialog").addEventListener(
-    "click",
-    () => entryDialog.close()
-);
+document
+  .getElementById("close-entry-dialog")
+  .addEventListener("click", () => entryDialog.close());
 
-entryDialog.addEventListener("click", event => {
-    if (event.target !== entryDialog) {
-        return;
-    }
+entryDialog.addEventListener("click", (event) => {
+  if (event.target !== entryDialog) {
+    return;
+  }
 
-    const rect = entryDialog.getBoundingClientRect();
+  const rect = entryDialog.getBoundingClientRect();
 
-    const outside =
-        event.clientX < rect.left ||
-        event.clientX > rect.right ||
-        event.clientY < rect.top ||
-        event.clientY > rect.bottom;
+  const outside =
+    event.clientX < rect.left ||
+    event.clientX > rect.right ||
+    event.clientY < rect.top ||
+    event.clientY > rect.bottom;
 
-    if (outside) {
-        entryDialog.close();
-    }
+  if (outside) {
+    entryDialog.close();
+  }
 });
 
 // Hover Stars
 
 function createHoverStar(rating, index) {
-    const star = document.createElement("span");
-    star.className = "hover-star";
+  const star = document.createElement("span");
+  star.className = "hover-star";
 
-    const base = document.createElement("img");
-    base.src = "assets/star-empty.png";
-    base.alt = "";
+  const base = document.createElement("img");
+  base.src = "assets/star-empty.png";
+  base.alt = "";
 
-    const fill = document.createElement("span");
-    fill.className = "hover-star-fill";
+  const fill = document.createElement("span");
+  fill.className = "hover-star-fill";
 
-    const filledImage = document.createElement("img");
-    filledImage.src = "assets/star-filled.png";
-    filledImage.alt = "";
+  const filledImage = document.createElement("img");
+  filledImage.src = "assets/star-filled.png";
+  filledImage.alt = "";
 
-    fill.appendChild(filledImage);
+  fill.appendChild(filledImage);
 
-    const filledPart = Math.max(0, Math.min(1, rating - index));
-    fill.style.width = `${filledPart * 100}%`;
+  const filledPart = Math.max(0, Math.min(1, rating - index));
+  fill.style.width = `${filledPart * 100}%`;
 
-    star.append(base, fill);
+  star.append(base, fill);
 
-    return star;
+  return star;
 }
 
 // Library
 
 async function loadEntries() {
-    const response = await fetch(
-        `/api/entries?category=${encodeURIComponent(currentCategory)}`,
-        {
-            credentials: "same-origin"
-        }
-    );
+  const response = await fetch(
+    `/api/entries?category=${encodeURIComponent(currentCategory)}`,
+    {
+      credentials: "same-origin",
+    },
+  );
 
-    if (!response.ok) {
-        throw new Error("Could not load entries.");
-    }
+  if (!response.ok) {
+    throw new Error("Could not load entries.");
+  }
 
-    const data = await response.json();
+  const data = await response.json();
 
-    savedEntries = data.entries;
-    renderEntries();
+  savedEntries = data.entries;
+  renderEntries();
 }
 
 function createEntryCard(entry) {
-    const card = document.createElement("article");
-    card.className = "media-entry";
+  const card = document.createElement("article");
+  card.className = "media-entry";
 
-    const openButton = document.createElement("button");
-    openButton.type = "button";
-    openButton.className = "media-open";
-    openButton.setAttribute("aria-label", `Open ${entry.title}`);
+  const openButton = document.createElement("button");
+  openButton.type = "button";
+  openButton.className = "media-open";
+  openButton.setAttribute("aria-label", `Open ${entry.title}`);
 
-    const poster = document.createElement("div");
-    poster.className = "media-poster";
+  const poster = document.createElement("div");
+  poster.className = "media-poster";
 
-    if (entry.image_url) {
-        const image = document.createElement("img");
+  if (entry.image_url) {
+    const image = document.createElement("img");
 
-        image.src = entry.image_url;
-        image.alt = entry.title;
+    image.src = entry.image_url;
+    image.alt = entry.title;
 
-        poster.appendChild(image);
-    } else {
-        const placeholder = document.createElement("span");
+    poster.appendChild(image);
+  } else {
+    const placeholder = document.createElement("span");
 
-        placeholder.className = "media-placeholder";
-        placeholder.textContent = "NO COVER";
+    placeholder.className = "media-placeholder";
+    placeholder.textContent = "NO COVER";
 
-        poster.appendChild(placeholder);
-    }
+    poster.appendChild(placeholder);
+  }
 
-    const title = document.createElement("p");
-    title.className = "media-title";
-    title.textContent = entry.title;
+  const title = document.createElement("p");
+  title.className = "media-title";
+  title.textContent = entry.title;
 
-    openButton.append(poster, title);
+  openButton.append(poster, title);
 
-    openButton.addEventListener("click", () => {
-        openEditEntry(entry);
-    });
+  openButton.addEventListener("click", () => {
+    openEditEntry(entry);
+  });
 
-    const details = document.createElement("div");
-    details.className = "media-details";
-    details.setAttribute("aria-hidden", "true");
+  const details = document.createElement("div");
+  details.className = "media-details";
+  details.setAttribute("aria-hidden", "true");
 
-    const hoverTitle = document.createElement("div");
-    hoverTitle.className = "hover-title";
-    hoverTitle.textContent = entry.title;
+  const hoverTitle = document.createElement("div");
+  hoverTitle.className = "hover-title";
+  hoverTitle.textContent = entry.title;
 
-    const status = document.createElement("span");
-    status.className = "hover-status";
-    status.textContent = entry.status.toUpperCase();
+  const status = document.createElement("span");
+  status.className = "hover-status";
+  status.textContent = entry.status.toUpperCase();
 
-    const reviewLabel = document.createElement("span");
-    reviewLabel.className = "hover-review-label";
-    reviewLabel.textContent = "My Review:";
+  const reviewLabel = document.createElement("span");
+  reviewLabel.className = "hover-review-label";
+  reviewLabel.textContent = "My Review:";
 
-    const ratingRow = document.createElement("div");
-    ratingRow.className = "hover-rating-row";
+  const ratingRow = document.createElement("div");
+  ratingRow.className = "hover-rating-row";
 
-    const stars = document.createElement("div");
-    stars.className = "hover-stars";
+  const stars = document.createElement("div");
+  stars.className = "hover-stars";
 
-    const rating = entry.rating === null
-        ? 0
-        : Number(entry.rating);
+  const rating = entry.rating === null ? 0 : Number(entry.rating);
 
-    for (let index = 0; index < 5; index++) {
-        stars.appendChild(createHoverStar(rating, index));
-    }
+  for (let index = 0; index < 5; index++) {
+    stars.appendChild(createHoverStar(rating, index));
+  }
 
-    const ratingText = document.createElement("span");
-    ratingText.className = "hover-rating-value";
-    ratingText.textContent = `(${rating}/5)`;
+  const ratingText = document.createElement("span");
+  ratingText.className = "hover-rating-value";
+  ratingText.textContent = `(${rating}/5)`;
 
-    ratingRow.append(stars, ratingText);
+  ratingRow.append(stars, ratingText);
 
-    details.append(
-        hoverTitle,
-        status,
-        reviewLabel,
-        ratingRow
-    );
+  details.append(hoverTitle, status, reviewLabel, ratingRow);
 
-    card.append(openButton, details);
+  card.append(openButton, details);
 
-    return card;
+  return card;
 }
 
 function renderEntries() {
-    totalCountElement.textContent = savedEntries.length;
+  totalCountElement.textContent = savedEntries.length;
 
-    const ratings = savedEntries
-        .filter(entry => entry.rating !== null)
-        .map(entry => Number(entry.rating));
+  const ratings = savedEntries
+    .filter((entry) => entry.rating !== null)
+    .map((entry) => Number(entry.rating));
 
-    if (ratings.length > 0) {
-        const sum = ratings.reduce((total, value) => total + value, 0);
+  if (ratings.length > 0) {
+    const sum = ratings.reduce((total, value) => total + value, 0);
 
-        averageRatingElement.textContent =
-            (sum / ratings.length).toFixed(1);
-    } else {
-        averageRatingElement.textContent = "—";
-    }
+    averageRatingElement.textContent = (sum / ratings.length).toFixed(1);
+  } else {
+    averageRatingElement.textContent = "—";
+  }
 
-    const statusLabels = {
-        all: "ALL",
-        completed: "COMPLETED",
-        incomplete: "INCOMPLETE",
-        dropped: "DROPPED"
-    };
+  const statusLabels = {
+    all: "ALL",
+    completed: "COMPLETED",
+    incomplete: "INCOMPLETE",
+    dropped: "DROPPED",
+  };
 
-    document.querySelectorAll(".filter-btn").forEach(button => {
-        const status = button.dataset.status;
+  document.querySelectorAll(".filter-btn").forEach((button) => {
+    const status = button.dataset.status;
 
-        const count = status === "all"
-            ? savedEntries.length
-            : savedEntries.filter(entry => entry.status === status).length;
+    const count =
+      status === "all"
+        ? savedEntries.length
+        : savedEntries.filter((entry) => entry.status === status).length;
 
-        button.textContent = `${statusLabels[status]} (${count})`;
-        button.classList.toggle("active", status === selectedStatus);
-    });
+    button.textContent = `${statusLabels[status]} (${count})`;
+    button.classList.toggle("active", status === selectedStatus);
+  });
 
-    const searchText = searchField.value.trim().toLowerCase();
+  const searchText = searchField.value.trim().toLowerCase();
 
-    const visibleEntries = savedEntries.filter(entry => {
-        const matchesStatus =
-            selectedStatus === "all" ||
-            entry.status === selectedStatus;
+  const visibleEntries = savedEntries.filter((entry) => {
+    const matchesStatus =
+      selectedStatus === "all" || entry.status === selectedStatus;
 
-        const matchesSearch =
-            entry.title.toLowerCase().includes(searchText);
+    const matchesSearch = entry.title.toLowerCase().includes(searchText);
 
-        return matchesStatus && matchesSearch;
-    });
+    return matchesStatus && matchesSearch;
+  });
 
-    entriesGrid.querySelectorAll(".media-entry").forEach(card => {
-        card.remove();
-    });
+  entriesGrid.querySelectorAll(".media-entry").forEach((card) => {
+    card.remove();
+  });
 
-    visibleEntries.forEach(entry => {
-        const card = createEntryCard(entry);
+  visibleEntries.forEach((entry) => {
+    const card = createEntryCard(entry);
 
-        entriesGrid.insertBefore(card, addNewButton);
-    });
+    entriesGrid.insertBefore(card, addNewButton);
+  });
 }
 
 // Filters
 
-document.querySelectorAll(".filter-btn").forEach(button => {
-    button.addEventListener("click", () => {
-        selectedStatus = button.dataset.status;
-        renderEntries();
-    });
+document.querySelectorAll(".filter-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    selectedStatus = button.dataset.status;
+    renderEntries();
+  });
 });
 
 // Search
 
 searchField.addEventListener("input", renderEntries);
 
-
 // Save
 
-entryForm.addEventListener("submit", async event => {
-    event.preventDefault();
+entryForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-    const formData = new FormData(entryForm);
-    const photoFile = photoInput.files[0] || null;
+  const formData = new FormData(entryForm);
+  const photoFile = photoInput.files[0] || null;
 
-    const lengthValue = formData.get("length");
-    const ratingValue = formData.get("rating");
+  const lengthValue = formData.get("length");
+  const ratingValue = formData.get("rating");
+  const entryGenres = genreInput.value;
 
-    const entry = {
-        category: currentCategory,
-        title: formData.get("title").trim(),
-        genre: formData.get("genre").trim(),
-        description: formData.get("description").trim(),
-        review: formData.get("review").trim(),
-        status: formData.get("status"),
-        rating: ratingValue === "" ? null : Number(ratingValue),
-        length: lengthValue === "" ? null : Number(lengthValue)
-    };
+  if (entryGenres.length > MAX_ENTRY_GENRE_LENGTH) {
+    saveMessage.textContent = "Selected genres exceed 100 characters.";
+    return;
+  }
 
-    const isEditing = editingEntryId !== null;
+  const entry = {
+    category: currentCategory,
+    title: formData.get("title").trim(),
+    genre: entryGenres,
+    description: formData.get("description").trim(),
+    review: formData.get("review").trim(),
+    status: formData.get("status"),
+    rating: ratingValue === "" ? null : Number(ratingValue),
+    length: lengthValue === "" ? null : Number(lengthValue),
+  };
 
-    const url = isEditing
-        ? `/api/entries/${encodeURIComponent(editingEntryId)}`
-        : "/api/entries";
+  const isEditing = editingEntryId !== null;
 
-    saveButton.disabled = true;
-    saveButton.textContent = "SAVING...";
-    saveMessage.textContent = "";
-    dashboardMessage.textContent = "";
+  const url = isEditing
+    ? `/api/entries/${encodeURIComponent(editingEntryId)}`
+    : "/api/entries";
 
-    let entrySaved = false;
-    let savedEntryId = editingEntryId;
+  saveButton.disabled = true;
+  saveButton.textContent = "SAVING...";
+  saveMessage.textContent = "";
+  dashboardMessage.textContent = "";
+
+  let entrySaved = false;
+  let savedEntryId = editingEntryId;
+
+  try {
+    const response = await fetch(url, {
+      method: isEditing ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+      body: JSON.stringify(entry),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Could not save entry.");
+    }
+
+    entrySaved = true;
+    savedEntryId = data.entry.id;
+
+    if (photoFile) {
+      saveButton.textContent = "UPLOADING PHOTO...";
+
+      const photoData = new FormData();
+      photoData.append("photo", photoFile);
+
+      const photoResponse = await fetch(
+        `/api/entries/${encodeURIComponent(savedEntryId)}/photo`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          body: photoData,
+        },
+      );
+
+      const photoResult = await photoResponse.json();
+
+      if (!photoResponse.ok) {
+        throw new Error(photoResult.message || "Could not upload photo.");
+      }
+    } else if (removePhotoRequested && isEditing) {
+      saveButton.textContent = "REMOVING PHOTO...";
+
+      const photoResponse = await fetch(
+        `/api/entries/${encodeURIComponent(savedEntryId)}/photo`,
+        {
+          method: "DELETE",
+          credentials: "same-origin",
+        },
+      );
+
+      const photoResult = await photoResponse.json();
+
+      if (!photoResponse.ok) {
+        throw new Error(photoResult.message || "Could not remove photo.");
+      }
+    }
+
+    entryDialog.close();
+    resetEntryForm();
 
     try {
-        const response = await fetch(url, {
-            method: isEditing ? "PUT" : "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "same-origin",
-            body: JSON.stringify(entry)
-        });
+      await loadEntries();
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || "Could not save entry.");
-        }
-
-        entrySaved = true;
-        savedEntryId = data.entry.id;
-
-        if (photoFile) {
-            saveButton.textContent = "UPLOADING PHOTO...";
-
-            const photoData = new FormData();
-            photoData.append("photo", photoFile);
-
-            const photoResponse = await fetch(
-                `/api/entries/${encodeURIComponent(savedEntryId)}/photo`,
-                {
-                    method: "POST",
-                    credentials: "same-origin",
-                    body: photoData
-                }
-            );
-
-            const photoResult = await photoResponse.json();
-
-            if (!photoResponse.ok) {
-                throw new Error(
-                    photoResult.message || "Could not upload photo."
-                );
-            }
-        } else if (removePhotoRequested && isEditing) {
-            saveButton.textContent = "REMOVING PHOTO...";
-
-            const photoResponse = await fetch(
-                `/api/entries/${encodeURIComponent(savedEntryId)}/photo`,
-                {
-                    method: "DELETE",
-                    credentials: "same-origin"
-                }
-            );
-
-            const photoResult = await photoResponse.json();
-
-            if (!photoResponse.ok) {
-                throw new Error(
-                    photoResult.message || "Could not remove photo."
-                );
-            }
-        }
-
-        entryDialog.close();
-        resetEntryForm();
-
-        try {
-            await loadEntries();
-
-            dashboardMessage.textContent = isEditing
-                ? "Entry updated successfully."
-                : "Entry saved successfully.";
-        } catch (error) {
-            console.error(error);
-
-            dashboardMessage.textContent =
-                "Entry saved, but the library could not refresh.";
-        }
+      dashboardMessage.textContent = isEditing
+        ? "Entry updated successfully."
+        : "Entry saved successfully.";
     } catch (error) {
-        if (entrySaved) {
-            editingEntryId = savedEntryId;
-            deleteButton.hidden = false;
+      console.error(error);
 
-            saveMessage.textContent =
-                `Entry saved, but the photo change failed: ${error.message}`;
-
-            try {
-                await loadEntries();
-            } catch (loadError) {
-                console.error(loadError);
-            }
-        } else {
-            saveMessage.textContent = error.message;
-        }
-    } finally {
-        saveButton.disabled = false;
-
-        saveButton.textContent = editingEntryId === null
-            ? "SAVE"
-            : "SAVE CHANGES";
+      dashboardMessage.textContent =
+        "Entry saved, but the library could not refresh.";
     }
-});
+  } catch (error) {
+    if (entrySaved) {
+      editingEntryId = savedEntryId;
+      deleteButton.hidden = false;
 
+      saveMessage.textContent = `Entry saved, but the photo change failed: ${error.message}`;
+
+      try {
+        await loadEntries();
+      } catch (loadError) {
+        console.error(loadError);
+      }
+    } else {
+      saveMessage.textContent = error.message;
+    }
+  } finally {
+    saveButton.disabled = false;
+
+    saveButton.textContent = editingEntryId === null ? "SAVE" : "SAVE CHANGES";
+  }
+});
 
 // Delete
 
 deleteButton.addEventListener("click", async () => {
-    if (editingEntryId === null) {
-        return;
-    }
+  if (editingEntryId === null) {
+    return;
+  }
 
-    const confirmed = window.confirm(
-        "Delete this entry permanently?"
+  const confirmed = window.confirm("Delete this entry permanently?");
+
+  if (!confirmed) {
+    return;
+  }
+
+  deleteButton.disabled = true;
+  saveMessage.textContent = "";
+
+  try {
+    const response = await fetch(
+      `/api/entries/${encodeURIComponent(editingEntryId)}`,
+      {
+        method: "DELETE",
+        credentials: "same-origin",
+      },
     );
 
-    if (!confirmed) {
-        return;
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Could not delete entry.");
     }
 
-    deleteButton.disabled = true;
-    saveMessage.textContent = "";
+    entryDialog.close();
+    resetEntryForm();
 
     try {
-        const response = await fetch(
-            `/api/entries/${encodeURIComponent(editingEntryId)}`,
-            {
-                method: "DELETE",
-                credentials: "same-origin"
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || "Could not delete entry.");
-        }
-
-        entryDialog.close();
-        resetEntryForm();
-
-        try {
-            await loadEntries();
-            dashboardMessage.textContent =
-                "Entry deleted successfully.";
-        } catch (error) {
-            console.error(error);
-            dashboardMessage.textContent =
-                "Entry deleted, but the library could not refresh.";
-        }
+      await loadEntries();
+      dashboardMessage.textContent = "Entry deleted successfully.";
     } catch (error) {
-        saveMessage.textContent = error.message;
-    } finally {
-        deleteButton.disabled = false;
+      console.error(error);
+      dashboardMessage.textContent =
+        "Entry deleted, but the library could not refresh.";
     }
+  } catch (error) {
+    saveMessage.textContent = error.message;
+  } finally {
+    deleteButton.disabled = false;
+  }
 });
 
 // Session
 
 async function startDashboard() {
-    const authenticated = await checkSession();
+  const authenticated = await checkSession();
 
-    if (!authenticated) {
-        return;
-    }
+  if (!authenticated) {
+    return;
+  }
 
-    try {
-        await loadEntries();
-    } catch (error) {
-        console.error(error);
-        dashboardMessage.textContent = "Could not load entries.";
-    }
+  await loadEntryGenres();
+
+  try {
+    await loadEntries();
+  } catch (error) {
+    console.error(error);
+    dashboardMessage.textContent = "Could not load entries.";
+  }
 }
 
 startDashboard();

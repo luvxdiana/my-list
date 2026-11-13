@@ -441,10 +441,33 @@
                 required
               />
 
-              <label class="entry-field">
-                <span>Genres:</span>
-                <input type="text" name="genre" maxlength="100" />
-              </label>
+              <div class="entry-field entry-genre-field">
+                <span id="entry-genre-label">Genres:</span>
+                <div class="entry-genre-control">
+                  <input type="hidden" name="genre" id="entry-genre-value" />
+                  <details class="entry-genre-picker" id="entry-genre-picker">
+                    <summary
+                      id="entry-genre-summary"
+                      aria-labelledby="entry-genre-label entry-genre-summary"
+                    >
+                      <span id="entry-genre-selection">Select genres...</span>
+                    </summary>
+                    <div
+                      class="entry-genre-options"
+                      id="entry-genre-options"
+                      role="group"
+                      aria-label="Available genres"
+                    ></div>
+                  </details>
+                  <span
+                    class="entry-genre-hint"
+                    id="entry-genre-hint"
+                    role="status"
+                    aria-live="polite"
+                    >Loading genres...</span
+                  >
+                </div>
+              </div>
 
               <label class="entry-field">
                 <span id="entry-length-label">Total Episodes:</span>
