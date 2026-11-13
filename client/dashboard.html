@@ -315,13 +315,53 @@
             </div>
           </fieldset>
 
+          <!-- Compass History -->
+          <label
+            class="compass-save-history"
+            style="
+              display: flex;
+              align-items: flex-start;
+              gap: 12px;
+              margin-top: 20px;
+              color: #fff;
+              cursor: pointer;
+            "
+          >
+            <input
+              type="checkbox"
+              name="save_history"
+              value="true"
+              style="
+                width: 18px;
+                height: 18px;
+                margin-top: 3px;
+                accent-color: #c080dd;
+                flex-shrink: 0;
+              "
+            />
+            <span>
+              <strong>Save this Compass search</strong>
+              <small
+                style="
+                  display: block;
+                  margin-top: 5px;
+                  line-height: 1.5;
+                  opacity: 0.8;
+                "
+              >
+                Save your selected mood, desired emotion, time, content type,
+                and recommended titles to your account.
+              </small>
+            </span>
+          </label>
+
           <!-- Search -->
           <button class="compass-submit-btn" type="submit">
             SEARCH <span aria-hidden="true">→</span>
           </button>
 
           <p class="compass-privacy-note">
-            Your answers are not saved during this preview.
+            Your Compass search is not saved unless you choose to save it.
           </p>
 
           <!-- Preview -->

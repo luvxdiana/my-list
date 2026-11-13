@@ -1,0 +1,76 @@
+=== Run information ===
+
+Scheme:       weka.clusterers.SimpleKMeans -init 0 -max-candidates 100 -periodic-pruning 10000 -min-density 2.0 -t1 -1.25 -t2 -1.0 -N 3 -A "weka.core.EuclideanDistance -R first-last" -I 500 -O -num-slots 1 -S 1
+Relation:     mylist_compass_media_metadata-weka.filters.unsupervised.attribute.Remove-R1-3
+Instances:    50
+Attributes:   16
+              genre_action
+              genre_adventure
+              genre_animation
+              genre_comedy
+              genre_crime
+              genre_documentary
+              genre_drama
+              genre_family
+              genre_fantasy
+              genre_horror
+              genre_music
+              genre_mystery
+              genre_romance
+              genre_sci_fi_fantasy
+              genre_science_fiction
+              genre_thriller
+Test mode:    evaluate on training data
+
+
+=== Clustering model (full training set) ===
+
+
+kMeans
+======
+
+Number of iterations: 3
+Within cluster sum of squared errors: 89.0
+
+Initial starting points (random):
+
+Cluster 0: 0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0
+Cluster 1: 0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0
+Cluster 2: 0,0,1,1,0,0,0,1,1,0,0,0,0,0,0,0
+
+Missing values globally replaced with mean/mode
+
+Final cluster centroids:
+                                     Cluster#
+Attribute                Full Data          0          1          2
+                            (50.0)     (36.0)      (7.0)      (7.0)
+===================================================================
+genre_action                     0          0          0          0
+genre_adventure                  0          0          0          0
+genre_animation                  0          0          0          1
+genre_comedy                     0          0          0          0
+genre_crime                      0          0          1          0
+genre_documentary                0          0          0          0
+genre_drama                      1          1          1          0
+genre_family                     0          0          0          1
+genre_fantasy                    0          0          0          1
+genre_horror                     0          0          0          0
+genre_music                      0          0          0          0
+genre_mystery                    0          0          0          0
+genre_romance                    0          0          0          0
+genre_sci_fi_fantasy             0          0          0          0
+genre_science_fiction            0          0          0          0
+genre_thriller                   0          0          0          0
+
+
+
+
+Time taken to build model (full training data) : 0 seconds
+
+=== Model and evaluation on training set ===
+
+Clustered Instances
+
+0      36 ( 72%)
+1       7 ( 14%)
+2       7 ( 14%)

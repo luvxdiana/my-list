@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-11-11T09:12:57.619Z",
+  "dataset_type": "prototype_media_catalog",
+  "source_tables": [
+    "public.media_catalog",
+    "public.media_genres",
+    "public.genres",
+    "public.media_emotions",
+    "public.emotions"
+  ],
+  "independent_emotional_annotations_included": false,
+  "user_feedback_included": false,
+  "total_media": 50,
+  "categories": {
+    "movie": 31,
+    "series": 19
+  },
+  "media_with_preliminary_emotion_tags": 16,
+  "media_without_emotion_tags": 34,
+  "preliminary_emotion_tag_total": 35,
+  "preliminary_emotion_coverage_percent": 32,
+  "missing_release_year_count": 0,
+  "media_without_genres": 0,
+  "genre_distribution": {
+    "Action": 3,
+    "Adventure": 8,
+    "Animation": 9,
+    "Comedy": 18,
+    "Crime": 7,
+    "Documentary": 3,
+    "Drama": 28,
+    "Family": 11,
+    "Fantasy": 10,
+    "Horror": 3,
+    "Music": 2,
+    "Mystery": 6,
+    "Romance": 5,
+    "Sci-Fi & Fantasy": 1,
+    "Science Fiction": 6,
+    "Thriller": 6
+  },
+  "preliminary_emotion_distribution": {
+    "joy": 6,
+    "comfort": 7,
+    "calm": 1,
+    "inspiration": 9,
+    "thrill": 6,
+    "energy": 6
+  }
+}
