@@ -303,3 +303,68 @@ body {
     font-weight: 600;
     color: #FFFFF6;
 }
+
+/* Language Switch */
+.site-header {
+    right: 40px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.language-switch {
+    display: inline-flex;
+    gap: 3px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 246, 0.65);
+    border-radius: 999px;
+    background: rgba(65, 71, 139, 0.5);
+    backdrop-filter: blur(8px);
+    flex-shrink: 0;
+}
+
+.language-button {
+    min-width: 45px;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--porcelain);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.language-button[aria-pressed="true"] {
+    background: var(--bone);
+    color: var(--french-blue);
+}
+
+.language-button:focus-visible {
+    outline: 3px solid var(--lavender);
+    outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    .site-header {
+        right: 20px;
+        align-items: center;
+    }
+
+    .language-button {
+        min-width: 37px;
+        padding: 8px 9px;
+    }
+
+    .auth-card h1 {
+        overflow-wrap: anywhere;
+    }
+
+    .submit-btn {
+        min-width: 170px;
+        width: auto;
+        max-width: 100%;
+        padding: 0 16px;
+    }
+}

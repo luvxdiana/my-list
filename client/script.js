@@ -1,4 +1,6 @@
 
+const { t, translateServerError } = window.MyListI18n;
+
 const loginSection = document.getElementById("login-section");
 const registerSection = document.getElementById("register-section");
 
@@ -56,13 +58,13 @@ loginForm.addEventListener("submit", async (event) => {
         const data = await response.json();
 
         if (!response.ok) {
-            showMessage(loginMessage, data.message || "Login failed");
+            showMessage(loginMessage, translateServerError(data.message, "auth.loginFailed"));
             return;
         }
 
         showMessage(
             loginMessage,
-            `Welcome, ${data.user.username}!`,
+            t("auth.welcome", { username: data.user.username }),
             true
         );
 
@@ -70,7 +72,7 @@ loginForm.addEventListener("submit", async (event) => {
         window.location.href = "/dashboard.html?category=anime";
 
     } catch (error) {
-        showMessage(loginMessage, "Cannot connect to server.");
+        showMessage(loginMessage, t("auth.noServer"));
         console.error(error);
     }
 });
@@ -88,7 +90,7 @@ registerForm.addEventListener("submit", async (event) => {
     const confirmPassword = formData.get("confirmPassword");
 
     if (password !== confirmPassword) {
-        showMessage(registerMessage, "Passwords do not match!");
+        showMessage(registerMessage, t("auth.passwordMismatch"));
         return;
     }
 
@@ -104,7 +106,7 @@ registerForm.addEventListener("submit", async (event) => {
         const data = await response.json();
 
         if (!response.ok) {
-            showMessage(registerMessage, data.message || "Registration failed");
+            showMessage(registerMessage, translateServerError(data.message, "auth.registerFailed"));
             return;
         }
 
@@ -115,12 +117,12 @@ registerForm.addEventListener("submit", async (event) => {
 
         showMessage(
             loginMessage,
-            "Account created! You can now log in.",
+            t("auth.created"),
             true
         );
 
     } catch (error) {
-        showMessage(registerMessage, "Cannot connect to server.");
+        showMessage(registerMessage, t("auth.noServer"));
         console.error(error);
     }
 });
