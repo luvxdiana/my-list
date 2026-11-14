@@ -458,3 +458,112 @@
     transition: none;
   }
 }
+
+/* Responsive Compass */
+.compass-dialog-scroll,
+.compass-preview,
+.compass-history-section,
+.compass-feedback-form {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 740px) {
+  .compass-dialog {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 18px;
+  }
+
+  .compass-dialog-scroll {
+    max-height: calc(100dvh - 20px);
+    padding: 48px 22px calc(24px + env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+  }
+
+  .compass-close-btn {
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .compass-header {
+    margin-bottom: 26px;
+  }
+
+  .compass-group {
+    margin-bottom: 24px;
+  }
+
+  .compass-options {
+    gap: 8px;
+  }
+
+  .compass-option span {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .compass-preview {
+    padding: 16px;
+  }
+
+  .compass-feedback-form > div {
+    min-width: 0;
+  }
+
+  .compass-launcher {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .compass-launch-btn {
+    width: 68px;
+    height: 68px;
+  }
+}
+
+@media (max-width: 390px) {
+  .compass-dialog-scroll {
+    padding-inline: 14px;
+  }
+
+  .compass-header h2 {
+    font-size: 24px;
+    letter-spacing: 0;
+  }
+
+  .compass-kicker {
+    letter-spacing: 1.5px;
+  }
+
+  .compass-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .compass-option {
+    min-width: 0;
+  }
+
+  .compass-option span {
+    width: 100%;
+    padding-inline: 7px;
+    text-align: center;
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  .compass-preview {
+    padding: 12px;
+  }
+
+  .compass-submit-btn {
+    min-height: 48px;
+    padding: 12px;
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+}
