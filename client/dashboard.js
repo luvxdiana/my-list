@@ -1,39 +1,46 @@
+const translateDashboard = (key, parameters) =>
+  window.MyListI18n?.t(key, parameters) ?? key;
+const localizedDashboardGenre = (name) => {
+  const key = `genre.${name}`;
+  const value = translateDashboard(key);
+  return value === key ? name : value;
+};
 // Categories
 
 const categories = {
   anime: {
-    title: "MY ANIME LIST",
-    total: "TOTAL ANIME",
-    search: "Search anime in my list...",
-    length: "Total Episodes:",
+    title: () => translateDashboard("dashboard.category.anime.title"),
+    total: () => translateDashboard("dashboard.category.anime.total"),
+    search: () => translateDashboard("dashboard.category.anime.search"),
+    length: () => translateDashboard("dashboard.category.anime.length"),
     step: "1",
   },
   series: {
-    title: "MY SERIES LIST",
-    total: "TOTAL SERIES",
-    search: "Search series in my list...",
-    length: "Total Episodes:",
+    title: () => translateDashboard("dashboard.category.series.title"),
+    total: () => translateDashboard("dashboard.category.series.total"),
+    search: () => translateDashboard("dashboard.category.series.search"),
+    length: () => translateDashboard("dashboard.category.series.length"),
     step: "1",
   },
   movie: {
-    title: "MY MOVIE LIST",
-    total: "TOTAL MOVIES",
-    search: "Search movies in my list...",
-    length: "Duration (minutes):",
+    title: () => translateDashboard("dashboard.category.movie.title"),
+    total: () => translateDashboard("dashboard.category.movie.total"),
+    search: () => translateDashboard("dashboard.category.movie.search"),
+    length: () => translateDashboard("dashboard.category.movie.length"),
     step: "1",
   },
   book: {
-    title: "MY READING LIST",
-    total: "TOTAL BOOKS",
-    search: "Search books in my list...",
-    length: "Total Pages:",
+    title: () => translateDashboard("dashboard.category.book.title"),
+    total: () => translateDashboard("dashboard.category.book.total"),
+    search: () => translateDashboard("dashboard.category.book.search"),
+    length: () => translateDashboard("dashboard.category.book.length"),
     step: "1",
   },
   game: {
-    title: "MY GAME LIST",
-    total: "TOTAL GAMES",
-    search: "Search games in my list...",
-    length: "Playtime (hours):",
+    title: () => translateDashboard("dashboard.category.game.title"),
+    total: () => translateDashboard("dashboard.category.game.total"),
+    search: () => translateDashboard("dashboard.category.game.search"),
+    length: () => translateDashboard("dashboard.category.game.length"),
     step: "0.1",
   },
 };
@@ -110,14 +117,20 @@ function updateGenrePicker() {
       : value;
 
   genreSelection.textContent =
-    names.length > 0 ? names.join(", ") : "Select genres...";
+    names.length > 0
+      ? names.map((name) => localizedDashboardGenre(name)).join(", ")
+      : translateDashboard("dashboard.genres.select");
 
   if (legacyGenreValue !== null && !genreSelectionChanged) {
-    genreSelection.textContent = legacyGenreValue || "Select genres...";
-    genreHint.textContent =
-      "Saved custom genres are preserved until you change the selection.";
+    genreSelection.textContent =
+      legacyGenreValue || translateDashboard("dashboard.genres.select");
+    genreHint.textContent = translateDashboard("dashboard.genres.legacy");
   } else if (genresLoaded) {
-    genreHint.textContent = `${names.length}/${MAX_ENTRY_GENRES} selected · Max ${MAX_ENTRY_GENRE_LENGTH} characters`;
+    genreHint.textContent = translateDashboard("dashboard.genres.count", {
+      count: names.length,
+      max: MAX_ENTRY_GENRES,
+      limit: MAX_ENTRY_GENRE_LENGTH,
+    });
   }
 
   genreOptions.querySelectorAll(".entry-genre-option").forEach((button) => {
@@ -175,7 +188,7 @@ function renderEntryGenres() {
     button.type = "button";
     button.className = "entry-genre-option";
     button.dataset.genre = name;
-    button.textContent = name;
+    button.textContent = localizedDashboardGenre(name);
     button.setAttribute("aria-pressed", "false");
 
     button.addEventListener("click", () => {
@@ -199,10 +212,11 @@ async function loadEntryGenres() {
       credentials: "same-origin",
       cache: "no-store",
     });
-    if (!response.ok) throw new Error("Could not load available genres.");
+    if (!response.ok)
+      throw new Error(translateDashboard("dashboard.genres.loadError"));
     const data = await response.json();
     if (!Array.isArray(data.genres))
-      throw new Error("Invalid genres response.");
+      throw new Error(translateDashboard("dashboard.genres.invalidResponse"));
 
     availableEntryGenres.splice(
       0,
@@ -216,23 +230,26 @@ async function loadEntryGenres() {
     renderEntryGenres();
   } catch (error) {
     console.error("Load genres error:", error);
-    genreHint.textContent =
-      "Genre options unavailable. Try refreshing the page.";
+    genreHint.textContent = translateDashboard("dashboard.genres.unavailable");
   }
 }
 
 // Navigation
 
-document.getElementById("library-title").textContent =
-  categories[currentCategory].title;
+function updateLocalizedCategory() {
+  document.getElementById("library-title").textContent =
+    categories[currentCategory].title();
 
-document.getElementById("total-label").textContent =
-  categories[currentCategory].total;
+  document.getElementById("total-label").textContent =
+    categories[currentCategory].total();
 
-searchField.placeholder = categories[currentCategory].search;
+  searchField.placeholder = categories[currentCategory].search();
 
-document.getElementById("entry-length-label").textContent =
-  categories[currentCategory].length;
+  document.getElementById("entry-length-label").textContent =
+    categories[currentCategory].length();
+}
+
+updateLocalizedCategory();
 
 entryForm.elements.namedItem("length").step = categories[currentCategory].step;
 
@@ -274,7 +291,7 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
     });
 
     if (!response.ok) {
-      throw new Error("Could not log out.");
+      throw new Error(translateDashboard("dashboard.logout.error"));
     }
 
     window.location.replace("/");
@@ -333,8 +350,7 @@ photoInput.addEventListener("change", () => {
 
   if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
     photoInput.value = "";
-    saveMessage.textContent =
-      "Choose a PNG, JPG, WEBP or GIF image up to 5 MB.";
+    saveMessage.textContent = translateDashboard("dashboard.photo.format");
     return;
   }
 
@@ -355,7 +371,7 @@ photoInput.addEventListener("change", () => {
 photoPreview.addEventListener("error", () => {
   photoPreview.hidden = true;
   photoLabel.classList.remove("has-image");
-  saveMessage.textContent = "Could not preview the photo.";
+  saveMessage.textContent = translateDashboard("dashboard.photo.preview");
 });
 
 removePhotoButton.addEventListener("click", () => {
@@ -391,7 +407,10 @@ for (let number = 1; number <= 5; number++) {
 
   button.type = "button";
   button.className = "star-button";
-  button.setAttribute("aria-label", `Rate ${number} stars`);
+  button.setAttribute(
+    "aria-label",
+    translateDashboard("dashboard.ratingStars", { number }),
+  );
 
   button.innerHTML = `
         <img class="star-base" src="assets/star-empty.png" alt="">
@@ -435,14 +454,17 @@ function resetEntryForm() {
   updateRating();
 
   deleteButton.hidden = true;
-  saveButton.textContent = "SAVE";
+  saveButton.textContent = translateDashboard("dashboard.save");
   saveMessage.textContent = "";
 }
 
 function openNewEntry() {
   resetEntryForm();
 
-  entryDialog.setAttribute("aria-label", "Add new entry");
+  entryDialog.setAttribute(
+    "aria-label",
+    translateDashboard("dashboard.addEntry"),
+  );
   entryDialog.showModal();
 
   textFields.forEach(resizeTextField);
@@ -495,9 +517,12 @@ function openEditEntry(entry) {
   }
 
   deleteButton.hidden = false;
-  saveButton.textContent = "SAVE CHANGES";
+  saveButton.textContent = translateDashboard("dashboard.saveChanges");
 
-  entryDialog.setAttribute("aria-label", `Edit ${entry.title}`);
+  entryDialog.setAttribute(
+    "aria-label",
+    translateDashboard("dashboard.editEntry", { title: entry.title }),
+  );
   entryDialog.showModal();
 
   textFields.forEach(resizeTextField);
@@ -566,7 +591,7 @@ async function loadEntries() {
   );
 
   if (!response.ok) {
-    throw new Error("Could not load entries.");
+    throw new Error(translateDashboard("dashboard.entry.loadError"));
   }
 
   const data = await response.json();
@@ -582,7 +607,10 @@ function createEntryCard(entry) {
   const openButton = document.createElement("button");
   openButton.type = "button";
   openButton.className = "media-open";
-  openButton.setAttribute("aria-label", `Open ${entry.title}`);
+  openButton.setAttribute(
+    "aria-label",
+    translateDashboard("dashboard.openEntry", { title: entry.title }),
+  );
 
   const poster = document.createElement("div");
   poster.className = "media-poster";
@@ -598,7 +626,7 @@ function createEntryCard(entry) {
     const placeholder = document.createElement("span");
 
     placeholder.className = "media-placeholder";
-    placeholder.textContent = "NO COVER";
+    placeholder.textContent = translateDashboard("dashboard.noCover");
 
     poster.appendChild(placeholder);
   }
@@ -623,11 +651,11 @@ function createEntryCard(entry) {
 
   const status = document.createElement("span");
   status.className = "hover-status";
-  status.textContent = entry.status.toUpperCase();
+  status.textContent = translateDashboard(`dashboard.status.${entry.status}`);
 
   const reviewLabel = document.createElement("span");
   reviewLabel.className = "hover-review-label";
-  reviewLabel.textContent = "My Review:";
+  reviewLabel.textContent = translateDashboard("dashboard.myReview");
 
   const ratingRow = document.createElement("div");
   ratingRow.className = "hover-rating-row";
@@ -670,10 +698,10 @@ function renderEntries() {
   }
 
   const statusLabels = {
-    all: "ALL",
-    completed: "COMPLETED",
-    incomplete: "INCOMPLETE",
-    dropped: "DROPPED",
+    all: translateDashboard("dashboard.status.all"),
+    completed: translateDashboard("dashboard.status.completed"),
+    incomplete: translateDashboard("dashboard.status.incomplete"),
+    dropped: translateDashboard("dashboard.status.dropped"),
   };
 
   document.querySelectorAll(".filter-btn").forEach((button) => {
@@ -736,7 +764,7 @@ entryForm.addEventListener("submit", async (event) => {
   const entryGenres = genreInput.value;
 
   if (entryGenres.length > MAX_ENTRY_GENRE_LENGTH) {
-    saveMessage.textContent = "Selected genres exceed 100 characters.";
+    saveMessage.textContent = translateDashboard("dashboard.genres.tooLong");
     return;
   }
 
@@ -758,7 +786,7 @@ entryForm.addEventListener("submit", async (event) => {
     : "/api/entries";
 
   saveButton.disabled = true;
-  saveButton.textContent = "SAVING...";
+  saveButton.textContent = translateDashboard("dashboard.saving");
   saveMessage.textContent = "";
   dashboardMessage.textContent = "";
 
@@ -778,14 +806,16 @@ entryForm.addEventListener("submit", async (event) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Could not save entry.");
+      throw new Error(
+        data.message || translateDashboard("dashboard.entry.saveError"),
+      );
     }
 
     entrySaved = true;
     savedEntryId = data.entry.id;
 
     if (photoFile) {
-      saveButton.textContent = "UPLOADING PHOTO...";
+      saveButton.textContent = translateDashboard("dashboard.photo.uploading");
 
       const photoData = new FormData();
       photoData.append("photo", photoFile);
@@ -802,10 +832,13 @@ entryForm.addEventListener("submit", async (event) => {
       const photoResult = await photoResponse.json();
 
       if (!photoResponse.ok) {
-        throw new Error(photoResult.message || "Could not upload photo.");
+        throw new Error(
+          photoResult.message ||
+            translateDashboard("dashboard.photo.uploadError"),
+        );
       }
     } else if (removePhotoRequested && isEditing) {
-      saveButton.textContent = "REMOVING PHOTO...";
+      saveButton.textContent = translateDashboard("dashboard.photo.removing");
 
       const photoResponse = await fetch(
         `/api/entries/${encodeURIComponent(savedEntryId)}/photo`,
@@ -818,7 +851,10 @@ entryForm.addEventListener("submit", async (event) => {
       const photoResult = await photoResponse.json();
 
       if (!photoResponse.ok) {
-        throw new Error(photoResult.message || "Could not remove photo.");
+        throw new Error(
+          photoResult.message ||
+            translateDashboard("dashboard.photo.removeError"),
+        );
       }
     }
 
@@ -829,20 +865,24 @@ entryForm.addEventListener("submit", async (event) => {
       await loadEntries();
 
       dashboardMessage.textContent = isEditing
-        ? "Entry updated successfully."
-        : "Entry saved successfully.";
+        ? translateDashboard("dashboard.entry.updated")
+        : translateDashboard("dashboard.entry.saved");
     } catch (error) {
       console.error(error);
 
-      dashboardMessage.textContent =
-        "Entry saved, but the library could not refresh.";
+      dashboardMessage.textContent = translateDashboard(
+        "dashboard.entry.refreshFailed",
+      );
     }
   } catch (error) {
     if (entrySaved) {
       editingEntryId = savedEntryId;
       deleteButton.hidden = false;
 
-      saveMessage.textContent = `Entry saved, but the photo change failed: ${error.message}`;
+      saveMessage.textContent = translateDashboard(
+        "dashboard.entry.photoFailed",
+        { message: error.message },
+      );
 
       try {
         await loadEntries();
@@ -855,7 +895,10 @@ entryForm.addEventListener("submit", async (event) => {
   } finally {
     saveButton.disabled = false;
 
-    saveButton.textContent = editingEntryId === null ? "SAVE" : "SAVE CHANGES";
+    saveButton.textContent =
+      editingEntryId === null
+        ? translateDashboard("dashboard.save")
+        : translateDashboard("dashboard.saveChanges");
   }
 });
 
@@ -866,7 +909,9 @@ deleteButton.addEventListener("click", async () => {
     return;
   }
 
-  const confirmed = window.confirm("Delete this entry permanently?");
+  const confirmed = window.confirm(
+    translateDashboard("dashboard.entry.deleteConfirm"),
+  );
 
   if (!confirmed) {
     return;
@@ -887,7 +932,9 @@ deleteButton.addEventListener("click", async () => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Could not delete entry.");
+      throw new Error(
+        data.message || translateDashboard("dashboard.entry.deleteError"),
+      );
     }
 
     entryDialog.close();
@@ -895,11 +942,14 @@ deleteButton.addEventListener("click", async () => {
 
     try {
       await loadEntries();
-      dashboardMessage.textContent = "Entry deleted successfully.";
+      dashboardMessage.textContent = translateDashboard(
+        "dashboard.entry.deleted",
+      );
     } catch (error) {
       console.error(error);
-      dashboardMessage.textContent =
-        "Entry deleted, but the library could not refresh.";
+      dashboardMessage.textContent = translateDashboard(
+        "dashboard.entry.deleteRefreshFailed",
+      );
     }
   } catch (error) {
     saveMessage.textContent = error.message;
@@ -923,8 +973,41 @@ async function startDashboard() {
     await loadEntries();
   } catch (error) {
     console.error(error);
-    dashboardMessage.textContent = "Could not load entries.";
+    dashboardMessage.textContent = translateDashboard(
+      "dashboard.entry.loadError",
+    );
   }
 }
 
 startDashboard();
+
+// Language changes
+document.addEventListener("mylist:languagechange", () => {
+  updateLocalizedCategory();
+  renderEntryGenres();
+  updateGenrePicker();
+  ratingContainer.querySelectorAll(".star-button").forEach((button, index) => {
+    button.setAttribute(
+      "aria-label",
+      translateDashboard("dashboard.ratingStars", { number: index + 1 }),
+    );
+  });
+  if (entryDialog.open) {
+    saveButton.textContent =
+      editingEntryId === null
+        ? translateDashboard("dashboard.save")
+        : translateDashboard("dashboard.saveChanges");
+    entryDialog.setAttribute(
+      "aria-label",
+      editingEntryId === null
+        ? translateDashboard("dashboard.addEntry")
+        : translateDashboard("dashboard.editEntry", {
+            title: entryForm.elements.namedItem("title").value,
+          }),
+    );
+  }
+  renderEntries();
+});
+
+// Apply category-specific labels after shared page translations are initialized.
+document.addEventListener("DOMContentLoaded", updateLocalizedCategory);

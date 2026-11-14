@@ -992,3 +992,52 @@ body {
 .delete-entry-btn:hover {
   background: rgba(220, 166, 203, 0.15);
 }
+
+/* Language switch */
+.dashboard-account-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.dashboard-language-switch {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(65, 71, 139, 0.25);
+}
+.dashboard-language-switch .language-button {
+  appearance: none;
+  cursor: pointer;
+  border: 0;
+  border-radius: 9px;
+  min-width: 35px;
+  min-height: 33px;
+  padding: 6px 8px;
+  font:
+    700 12px Arial,
+    sans-serif;
+  color: #fff;
+  background: transparent;
+}
+.dashboard-language-switch .language-button[aria-pressed="true"] {
+  color: #41478b;
+  background: #fffff6;
+}
+.dashboard-language-switch .language-button:focus-visible {
+  outline: 2px solid #fffff6;
+  outline-offset: 2px;
+}
+@media (max-width: 850px) {
+  .dashboard-header {
+    flex-wrap: wrap;
+  }
+  .dashboard-account-actions {
+    margin-left: auto;
+  }
+  .main-nav {
+    order: 3;
+    width: 100%;
+  }
+}

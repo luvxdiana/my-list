@@ -1,3 +1,10 @@
+const translateCompass = (key, parameters) =>
+  window.MyListI18n?.t(key, parameters) ?? key;
+const localizedCompassGenre = (name) => {
+  const key = `genre.${name}`;
+  const value = translateCompass(key);
+  return value === key ? name : value;
+};
 // Compass Elements
 
 const compassOpenButton = document.getElementById("open-compass-btn");
@@ -15,37 +22,45 @@ const compassSubmitButton = compassForm.querySelector('button[type="submit"]');
 
 const compassLabels = {
   current_mood: {
-    happy: "Happy",
-    sad: "Sad",
-    anxious: "Anxious",
-    calm: "Calm",
-    tired: "Tired",
-    excited: "Excited",
+    happy: translateCompass("compass.label.current_mood.happy"),
+    sad: translateCompass("compass.label.current_mood.sad"),
+    anxious: translateCompass("compass.label.current_mood.anxious"),
+    calm: translateCompass("compass.label.current_mood.calm"),
+    tired: translateCompass("compass.label.current_mood.tired"),
+    excited: translateCompass("compass.label.current_mood.excited"),
   },
 
   desired_emotion: {
-    joy: "Joy",
-    comfort: "Comfort",
-    calm: "Peace",
-    inspiration: "Inspiration",
-    thrill: "Excitement",
-    energy: "Energy",
+    joy: translateCompass("compass.label.desired_emotion.joy"),
+    comfort: translateCompass("compass.label.desired_emotion.comfort"),
+    calm: translateCompass("compass.label.desired_emotion.calm"),
+    inspiration: translateCompass("compass.label.desired_emotion.inspiration"),
+    thrill: translateCompass("compass.label.desired_emotion.thrill"),
+    energy: translateCompass("compass.label.desired_emotion.energy"),
   },
 
   available_time: {
-    30: "30 minutes",
-    60: "1 hour",
-    90: "1.5 hours",
-    120: "2 hours",
-    "180plus": "No time limit",
+    30: translateCompass("compass.label.available_time.30"),
+    60: translateCompass("compass.label.available_time.60"),
+    90: translateCompass("compass.label.available_time.90"),
+    120: translateCompass("compass.label.available_time.120"),
+    "180plus": translateCompass("compass.label.available_time.180plus"),
   },
 
   content_type: {
-    movie: "Movie",
-    series: "Series",
-    either: "Movie or series",
+    movie: translateCompass("compass.label.content_type.movie"),
+    series: translateCompass("compass.label.content_type.series"),
+    either: translateCompass("compass.label.content_type.either"),
   },
 };
+
+function refreshCompassLabels() {
+  Object.entries(compassLabels).forEach(([group, values]) => {
+    Object.keys(values).forEach((value) => {
+      values[value] = translateCompass(`compass.label.${group}.${value}`);
+    });
+  });
+}
 
 // Mascot
 
@@ -135,8 +150,7 @@ function getRecommendationStatus(data, count) {
 }
 
 function getCompassSuggestion(preferences) {
-  const limitedCoverage =
-    "The current catalog has limited emotional tags for this choice.";
+  const limitedCoverage = translateCompass("compass.suggest.limited");
 
   if (
     preferences.content_type !== "either" &&
@@ -144,31 +158,31 @@ function getCompassSuggestion(preferences) {
   ) {
     return (
       `${limitedCoverage} ` +
-      "You can try 'Movie or series' or a longer time limit, " +
-      "but these changes may not reveal additional matches."
+      translateCompass("compass.suggest.bothA") +
+      translateCompass("compass.suggest.bothB")
     );
   }
 
   if (preferences.content_type !== "either") {
     return (
       `${limitedCoverage} ` +
-      "Including both movies and series broadens the search, " +
-      "but may not provide more recommendations."
+      translateCompass("compass.suggest.typeA") +
+      translateCompass("compass.suggest.typeB")
     );
   }
 
   if (preferences.available_time !== "180plus") {
     return (
       `${limitedCoverage} ` +
-      "A longer time limit may help, but additional emotional " +
-      "annotations may still be needed."
+      translateCompass("compass.suggest.timeA") +
+      translateCompass("compass.suggest.timeB")
     );
   }
 
   return (
     `${limitedCoverage} ` +
-    "More recommendations may become available after " +
-    "additional emotional annotations are reviewed."
+    translateCompass("compass.suggest.moreA") +
+    translateCompass("compass.suggest.moreB")
   );
 }
 
@@ -205,30 +219,32 @@ function createRecommendationStatus(data, preferences, count) {
   `;
 
   if (status === "complete") {
-    title.textContent = "Your matches are ready ✦";
+    title.textContent = translateCompass("compass.status.ready");
 
     description.textContent =
-      "We found 3 titles matching your selected preferences " +
-      "using the current catalog tags.";
+      translateCompass("compass.status.completeA") +
+      translateCompass("compass.status.completeB");
   }
 
   if (status === "partial") {
     title.textContent =
-      count === 1 ? "1 recommendation found ✦" : "2 recommendations found ✦";
+      count === 1
+        ? translateCompass("compass.status.one")
+        : translateCompass("compass.status.two");
 
     description.textContent =
-      "These are the available matches for your chosen " +
-      "emotion, content type, and time limit. " +
-      "We won't fill the remaining places with unrelated titles.";
+      translateCompass("compass.status.partialA") +
+      translateCompass("compass.status.partialB") +
+      translateCompass("compass.status.partialC");
   }
 
   if (status === "empty") {
-    title.textContent = "No matches just yet ✦";
+    title.textContent = translateCompass("compass.status.empty");
 
     description.textContent =
-      "We couldn't find a title with the selected " +
-      "emotional tag that also meets your content " +
-      "and time preferences.";
+      translateCompass("compass.status.emptyA") +
+      translateCompass("compass.status.emptyB") +
+      translateCompass("compass.status.emptyC");
   }
 
   container.append(title, description);
@@ -276,12 +292,19 @@ function createRecommendationCard(media) {
 
   const details = document.createElement("p");
 
-  const category = media.category === "series" ? "Series" : "Movie";
+  const category =
+    media.category === "series"
+      ? translateCompass("compass.label.content_type.series")
+      : translateCompass("compass.label.content_type.movie");
 
   const duration =
     media.category === "series"
-      ? `${media.duration_minutes} min/episode`
-      : `${media.duration_minutes} min`;
+      ? translateCompass("compass.durationEpisode", {
+          minutes: media.duration_minutes,
+        })
+      : translateCompass("compass.durationMinutes", {
+          minutes: media.duration_minutes,
+        });
 
   details.textContent = [category, media.release_year, duration]
     .filter(Boolean)
@@ -296,7 +319,11 @@ function createRecommendationCard(media) {
   const genres = document.createElement("p");
 
   genres.textContent = Array.isArray(media.genres)
-    ? `Genres: ${media.genres.join(", ")}`
+    ? translateCompass("compass.genres", {
+        genres: media.genres
+          .map((name) => localizedCompassGenre(name))
+          .join(", "),
+      })
     : "";
 
   genres.style.cssText = `
@@ -321,8 +348,8 @@ function createRecommendationCard(media) {
   const scoreValue = Number(media.score);
 
   score.textContent = Number.isFinite(scoreValue)
-    ? `Prototype relevance score: ${scoreValue.toFixed(2)} / 1.00`
-    : "Prototype relevance score unavailable";
+    ? translateCompass("compass.score", { score: scoreValue.toFixed(2) })
+    : translateCompass("compass.scoreUnavailable");
 
   score.style.cssText = `
     margin: 0;
@@ -336,15 +363,17 @@ function createRecommendationCard(media) {
 }
 
 // Show Recommendations
+let lastCompassResults = null;
 
 function showRecommendations(data, preferences) {
+  lastCompassResults = { data, preferences };
   const recommendations = Array.isArray(data?.recommendations)
     ? data.recommendations
     : [];
 
   const heading = document.createElement("h3");
 
-  heading.textContent = "Your Compass Recommendations ✦";
+  heading.textContent = translateCompass("compass.results.heading");
 
   const summary = document.createElement("p");
 
@@ -372,11 +401,7 @@ function showRecommendations(data, preferences) {
 
   const disclaimer = document.createElement("p");
 
-  disclaimer.textContent =
-    "These are preliminary recommendations based on " +
-    "technical emotional tags. Relevance scores are " +
-    "heuristic and have not been validated through " +
-    "independent user research.";
+  disclaimer.textContent = translateCompass("compass.researchNote");
 
   disclaimer.style.cssText = `
     margin-top: 16px;
@@ -420,7 +445,10 @@ compassForm.addEventListener("submit", async (event) => {
   );
 
   if (!validPreferences) {
-    showCompassMessage("Almost there!", "Please answer all four questions.");
+    showCompassMessage(
+      translateCompass("compass.validation.title"),
+      translateCompass("compass.validation.all"),
+    );
 
     return;
   }
@@ -429,11 +457,11 @@ compassForm.addEventListener("submit", async (event) => {
 
   const originalButtonText = compassSubmitButton.textContent;
 
-  compassSubmitButton.textContent = "SEARCHING...";
+  compassSubmitButton.textContent = translateCompass("compass.searching");
 
   showCompassMessage(
-    "Finding your matches ✦",
-    "Your Compass is exploring the catalog...",
+    translateCompass("compass.search.waitTitle"),
+    translateCompass("compass.search.waitMessage"),
   );
 
   try {
@@ -456,17 +484,19 @@ compassForm.addEventListener("submit", async (event) => {
 
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error("Your session has expired. Please log in again.");
+        throw new Error(translateCompass("compass.session.expired"));
       }
 
       if (response.status === 503 && saveHistory) {
         throw new Error(
-          "History saving is not enabled yet. Uncheck " +
-            "'Save this Compass search' to continue without saving.",
+          translateCompass("compass.history.unavailableA") +
+            translateCompass("compass.history.unavailableB"),
         );
       }
 
-      throw new Error(data?.message || "Unable to generate recommendations.");
+      throw new Error(
+        data?.message || translateCompass("compass.recommendations.error"),
+      );
     }
 
     showRecommendations(data, preferences);
@@ -474,12 +504,12 @@ compassForm.addEventListener("submit", async (event) => {
     console.error("Compass error:", error);
 
     showCompassMessage(
-      "Something went wrong",
-      error.message || "Please try again.",
+      translateCompass("compass.error.title"),
+      error.message || translateCompass("compass.error.retry"),
     );
   } finally {
     compassSubmitButton.disabled = false;
-    compassSubmitButton.textContent = originalButtonText;
+    compassSubmitButton.textContent = translateCompass("dashboard.html.search");
   }
 });
 
@@ -498,7 +528,7 @@ if (compassHistoryHost) {
 
   const historyButton = document.createElement("button");
   historyButton.type = "button";
-  historyButton.textContent = "VIEW MY SAVED SEARCHES ✦";
+  historyButton.textContent = translateCompass("compass.history.view");
   historyButton.setAttribute("aria-controls", "compass-history-results");
   historyButton.setAttribute("aria-expanded", "false");
   historyButton.style.cssText = `
@@ -539,14 +569,17 @@ if (compassHistoryHost) {
   function historyDate(value) {
     const date = new Date(value);
     return Number.isNaN(date.getTime())
-      ? "Date unavailable"
-      : date.toLocaleString(undefined, {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+      ? translateCompass("compass.history.dateError")
+      : date.toLocaleString(
+          window.MyListI18n?.getLanguage() === "uk" ? "uk-UA" : "en-GB",
+          {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          },
+        );
   }
 
   // Feedback Form
@@ -564,8 +597,8 @@ if (compassHistoryHost) {
 
     const heading = document.createElement("p");
     heading.textContent = recommendation.feedback
-      ? "Your feedback · Edit anytime"
-      : "Rate this recommendation after watching";
+      ? translateCompass("compass.feedback.editTitle")
+      : translateCompass("compass.feedback.rateTitle");
     heading.style.cssText = `
       margin: 0 0 12px;
       font-size: 13px;
@@ -624,7 +657,11 @@ if (compassHistoryHost) {
 
     const emotionalFit = makeSelect();
     emotionalFit.required = true;
-    addOption(emotionalFit, "", "Select 1–5");
+    addOption(
+      emotionalFit,
+      "",
+      translateCompass("compass.feedback.selectRating"),
+    );
 
     for (let value = 1; value <= 5; value += 1) {
       addOption(emotionalFit, String(value), `${value} / 5`);
@@ -636,7 +673,7 @@ if (compassHistoryHost) {
         : String(recommendation.feedback.emotional_fit_rating);
 
     const mediaRating = makeSelect();
-    addOption(mediaRating, "", "Not rated");
+    addOption(mediaRating, "", translateCompass("compass.feedback.notRated"));
 
     for (let halfStars = 1; halfStars <= 10; halfStars += 1) {
       const value = halfStars / 2;
@@ -649,24 +686,36 @@ if (compassHistoryHost) {
         : String(Number(recommendation.feedback.media_rating));
 
     const emotionAchieved = makeSelect();
-    addOption(emotionAchieved, "", "Prefer not to say");
-    addOption(emotionAchieved, "true", "Yes");
-    addOption(emotionAchieved, "false", "No");
+    addOption(
+      emotionAchieved,
+      "",
+      translateCompass("compass.feedback.noAnswer"),
+    );
+    addOption(
+      emotionAchieved,
+      "true",
+      translateCompass("compass.feedback.yes"),
+    );
+    addOption(
+      emotionAchieved,
+      "false",
+      translateCompass("compass.feedback.no"),
+    );
     emotionAchieved.value =
       recommendation.feedback?.desired_emotion_achieved == null
         ? ""
         : String(recommendation.feedback.desired_emotion_achieved);
 
     fields.append(
-      makeField("Emotional fit (required)", emotionalFit),
-      makeField("Title rating (optional)", mediaRating),
-      makeField("Did you feel the desired emotion?", emotionAchieved),
+      makeField(translateCompass("compass.feedback.fit"), emotionalFit),
+      makeField(translateCompass("compass.feedback.rating"), mediaRating),
+      makeField(translateCompass("compass.feedback.achieved"), emotionAchieved),
     );
 
     const comment = document.createElement("textarea");
     comment.maxLength = 2000;
     comment.rows = 2;
-    comment.placeholder = "Optional note about this recommendation";
+    comment.placeholder = translateCompass("compass.feedback.note");
     comment.value = recommendation.feedback?.comment || "";
     comment.style.cssText = `
       box-sizing: border-box;
@@ -681,7 +730,10 @@ if (compassHistoryHost) {
       resize: vertical;
     `;
 
-    const commentField = makeField("Comment (optional)", comment);
+    const commentField = makeField(
+      translateCompass("compass.feedback.comment"),
+      comment,
+    );
     commentField.style.marginTop = "12px";
 
     const actions = document.createElement("div");
@@ -696,8 +748,8 @@ if (compassHistoryHost) {
     const submitButton = document.createElement("button");
     submitButton.type = "submit";
     submitButton.textContent = recommendation.feedback
-      ? "UPDATE FEEDBACK"
-      : "SAVE FEEDBACK";
+      ? translateCompass("compass.feedback.update")
+      : translateCompass("compass.feedback.save");
     submitButton.style.cssText = `
       padding: 10px 14px;
       border: 1px solid rgba(255, 255, 255, 0.45);
@@ -724,7 +776,7 @@ if (compassHistoryHost) {
       const recommendationId = recommendation.recommendation_id;
 
       if (!recommendationId || !emotionalFit.value) {
-        status.textContent = "Choose an emotional fit score first.";
+        status.textContent = translateCompass("compass.feedback.fitRequired");
         return;
       }
 
@@ -739,7 +791,7 @@ if (compassHistoryHost) {
       };
 
       submitButton.disabled = true;
-      submitButton.textContent = "SAVING...";
+      submitButton.textContent = translateCompass("compass.feedback.saving");
       status.textContent = "";
 
       try {
@@ -758,22 +810,23 @@ if (compassHistoryHost) {
         if (!response.ok) {
           throw new Error(
             response.status === 401
-              ? "Your session has expired. Please log in again."
-              : data?.message || "Unable to save your feedback.",
+              ? translateCompass("compass.session.expired")
+              : data?.message || translateCompass("compass.feedback.saveError"),
           );
         }
 
         recommendation.feedback = data?.feedback || payload;
-        heading.textContent = "Your feedback · Edit anytime";
-        status.textContent = "Feedback saved successfully.";
+        heading.textContent = translateCompass("compass.feedback.editTitle");
+        status.textContent = translateCompass("compass.feedback.saved");
         onSaved(recommendation.feedback);
       } catch (error) {
-        status.textContent = error.message || "Unable to save your feedback.";
+        status.textContent =
+          error.message || translateCompass("compass.feedback.saveError");
       } finally {
         submitButton.disabled = false;
         submitButton.textContent = recommendation.feedback
-          ? "UPDATE FEEDBACK"
-          : "SAVE FEEDBACK";
+          ? translateCompass("compass.feedback.update")
+          : translateCompass("compass.feedback.save");
       }
     });
 
@@ -820,8 +873,7 @@ if (compassHistoryHost) {
 
     if (recommendations.length === 0) {
       const empty = document.createElement("p");
-      empty.textContent =
-        "No matching titles were found for this saved search.";
+      empty.textContent = translateCompass("compass.history.noMatches");
       empty.style.cssText = "margin: 0 0 14px; opacity: 0.85;";
       card.append(heading, details, empty);
     } else {
@@ -829,7 +881,9 @@ if (compassHistoryHost) {
         const item = document.createElement("li");
         const score = Number(recommendation.score);
         const scoreLabel = Number.isFinite(score)
-          ? ` · score ${score.toFixed(2)}`
+          ? translateCompass("compass.history.score", {
+              score: score.toFixed(2),
+            })
           : "";
 
         const summary = document.createElement("div");
@@ -842,7 +896,9 @@ if (compassHistoryHost) {
         const updateFeedbackLabel = (feedback) => {
           const fit = feedback?.emotional_fit_rating;
           feedbackLabel.textContent =
-            fit == null ? "" : ` · emotional fit ${fit}/5`;
+            fit == null
+              ? ""
+              : translateCompass("compass.history.emotionalFit", { fit });
         };
 
         updateFeedbackLabel(recommendation.feedback);
@@ -858,7 +914,7 @@ if (compassHistoryHost) {
 
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
-    deleteButton.textContent = "DELETE THIS SEARCH";
+    deleteButton.textContent = translateCompass("compass.history.delete");
     deleteButton.style.cssText = `
       padding: 9px 12px;
       border: 1px solid rgba(255, 180, 190, 0.75);
@@ -873,12 +929,12 @@ if (compassHistoryHost) {
 
     deleteButton.addEventListener("click", async () => {
       const confirmed = window.confirm(
-        "Delete this saved Compass search? Its recommendations and feedback will also be deleted. This cannot be undone.",
+        translateCompass("compass.history.deleteConfirm"),
       );
       if (!confirmed) return;
 
       deleteButton.disabled = true;
-      deleteButton.textContent = "DELETING...";
+      deleteButton.textContent = translateCompass("compass.history.deleting");
 
       try {
         const response = await fetch(
@@ -888,15 +944,17 @@ if (compassHistoryHost) {
         const data = await response.json().catch(() => null);
         if (!response.ok) {
           throw new Error(
-            data?.message || "Unable to delete this saved search.",
+            data?.message || translateCompass("compass.history.deleteError"),
           );
         }
         await loadCompassHistory();
       } catch (error) {
-        historyMessage(error.message || "Unable to delete this saved search.");
+        historyMessage(
+          error.message || translateCompass("compass.history.deleteError"),
+        );
       } finally {
         deleteButton.disabled = false;
-        deleteButton.textContent = "DELETE THIS SEARCH";
+        deleteButton.textContent = translateCompass("compass.history.delete");
       }
     });
 
@@ -905,7 +963,7 @@ if (compassHistoryHost) {
   }
 
   async function loadCompassHistory() {
-    historyMessage("Loading your saved searches...");
+    historyMessage(translateCompass("compass.history.loading"));
 
     try {
       const response = await fetch("/api/compass/history", {
@@ -916,8 +974,8 @@ if (compassHistoryHost) {
       if (!response.ok) {
         throw new Error(
           response.status === 401
-            ? "Your session has expired. Please log in again."
-            : data?.message || "Unable to load your saved searches.",
+            ? translateCompass("compass.session.expired")
+            : data?.message || translateCompass("compass.history.loadError"),
         );
       }
 
@@ -926,28 +984,52 @@ if (compassHistoryHost) {
       if (historyResults.hidden) return;
 
       if (entries.length === 0) {
-        historyMessage(
-          "No saved searches yet. You can use Compass without saving anything.",
-        );
+        historyMessage(translateCompass("compass.history.empty"));
         return;
       }
 
       historyResults.replaceChildren(...entries.map(createHistoryEntry));
     } catch (error) {
       if (!historyResults.hidden) {
-        historyMessage(error.message || "Unable to load your saved searches.");
+        historyMessage(
+          error.message || translateCompass("compass.history.loadError"),
+        );
       }
     }
   }
+
+  document.addEventListener("mylist:languagechange", () => {
+    if (!historyResults.hidden) loadCompassHistory();
+  });
 
   historyButton.addEventListener("click", async () => {
     const willOpen = historyResults.hidden;
     historyResults.hidden = !willOpen;
     historyButton.setAttribute("aria-expanded", String(willOpen));
     historyButton.textContent = willOpen
-      ? "HIDE MY SAVED SEARCHES ✦"
-      : "VIEW MY SAVED SEARCHES ✦";
+      ? translateCompass("compass.history.hide")
+      : translateCompass("compass.history.view");
 
     if (willOpen) await loadCompassHistory();
   });
 }
+
+// Language changes
+document.addEventListener("mylist:languagechange", () => {
+  refreshCompassLabels();
+  if (lastCompassResults && !compassPreview.hidden) {
+    showRecommendations(
+      lastCompassResults.data,
+      lastCompassResults.preferences,
+    );
+  }
+  const historyButton = document.querySelector(
+    ".compass-history-section button",
+  );
+  const historyResults = document.getElementById("compass-history-results");
+  if (historyButton)
+    historyButton.textContent =
+      historyResults && !historyResults.hidden
+        ? translateCompass("compass.history.hide")
+        : translateCompass("compass.history.view");
+});

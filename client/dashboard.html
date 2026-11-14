@@ -1,320 +1,401 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My List | My Library</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title data-i18n="dashboard.pageTitle">My List | My Library</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inder&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inder&amp;display=swap"
       rel="stylesheet"
     />
-
-    <link rel="stylesheet" href="dashboard.css" />
-    <link rel="stylesheet" href="compass.css" />
-
-    <script src="dashboard.js" defer></script>
-    <script src="compass.js" defer></script>
+    <link href="dashboard.css" rel="stylesheet" />
+    <link href="compass.css" rel="stylesheet" />
+    <script defer="" src="i18n.js"></script>
+    <script defer="" src="dashboard.js"></script>
+    <script defer="" src="compass.js"></script>
   </head>
-
   <body>
     <!-- Navigation -->
     <header class="dashboard-header">
       <a class="brand" href="dashboard.html?category=anime">
-        <img src="assets/logo.png" alt="My List" />
+        <img alt="My List" src="assets/logo.png" />
       </a>
-
-      <nav class="main-nav" aria-label="Media categories">
-        <a href="?category=anime" data-category="anime">MY ANIME LIST</a>
-        <a href="?category=series" data-category="series">MY SERIES LIST</a>
-        <a href="?category=movie" data-category="movie">MY MOVIE LIST</a>
-        <a href="?category=book" data-category="book">MY READING LIST</a>
-        <a href="?category=game" data-category="game">MY GAME LIST</a>
+      <nav
+        aria-label="Media categories"
+        class="main-nav"
+        data-i18n-aria-label="dashboard.attr.media_categories"
+      >
+        <a
+          data-category="anime"
+          data-i18n="dashboard.html.my_anime_list"
+          href="?category=anime"
+          >MY ANIME LIST</a
+        >
+        <a
+          data-category="series"
+          data-i18n="dashboard.html.my_series_list"
+          href="?category=series"
+          >MY SERIES LIST</a
+        >
+        <a
+          data-category="movie"
+          data-i18n="dashboard.html.my_movie_list"
+          href="?category=movie"
+          >MY MOVIE LIST</a
+        >
+        <a
+          data-category="book"
+          data-i18n="dashboard.html.my_reading_list"
+          href="?category=book"
+          >MY READING LIST</a
+        >
+        <a
+          data-category="game"
+          data-i18n="dashboard.html.my_game_list"
+          href="?category=game"
+          >MY GAME LIST</a
+        >
       </nav>
 
-      <button
-        id="logout-btn"
-        class="logout-btn"
-        type="button"
-        aria-label="Log out"
-        title="Log out"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <path d="M16 17l5-5-5-5" />
-          <path d="M21 12H9" />
-        </svg>
-      </button>
+      <div class="dashboard-account-actions">
+        <div
+          aria-label="Мова інтерфейсу"
+          class="dashboard-language-switch"
+          data-i18n-aria-label="language.label"
+          role="group"
+        >
+          <button
+            aria-pressed="true"
+            class="language-button"
+            data-lang="uk"
+            type="button"
+          >
+            UA</button
+          ><button
+            aria-pressed="false"
+            class="language-button"
+            data-lang="en"
+            type="button"
+          >
+            EN
+          </button>
+        </div>
+        <button
+          aria-label="Log out"
+          class="logout-btn"
+          data-i18n-aria-label="dashboard.attr.log_out"
+          data-i18n-title="dashboard.attr.log_out"
+          id="logout-btn"
+          title="Log out"
+          type="button"
+        >
+          <svg aria-hidden="true" viewbox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <path d="M16 17l5-5-5-5"></path>
+            <path d="M21 12H9"></path>
+          </svg>
+        </button>
+      </div>
     </header>
-
     <!-- Library -->
     <main class="dashboard-main">
-      <h1 id="library-title">MY ANIME LIST</h1>
-
+      <h1 data-i18n="dashboard.html.my_anime_list" id="library-title">
+        MY ANIME LIST
+      </h1>
       <div class="dashboard-toolbar">
         <!-- Statistics -->
         <aside class="stats-panel">
           <div class="stat-item">
-            <span id="total-label">TOTAL ANIME</span>
+            <span data-i18n="dashboard.html.total_anime" id="total-label"
+              >TOTAL ANIME</span
+            >
             <strong id="total-count">0</strong>
           </div>
-
           <div class="stat-item">
-            <span>AVERAGE RATING</span>
+            <span data-i18n="dashboard.html.average_rating"
+              >AVERAGE RATING</span
+            >
             <strong id="average-rating">—</strong>
           </div>
         </aside>
-
         <!-- Filters -->
-        <section class="library-controls" aria-label="Library controls">
+        <section
+          aria-label="Library controls"
+          class="library-controls"
+          data-i18n-aria-label="dashboard.attr.library_controls"
+        >
           <div class="filters">
-            <button class="filter-btn active" data-status="all" type="button">
+            <button
+              class="filter-btn active"
+              data-i18n="dashboard.html.all_0"
+              data-status="all"
+              type="button"
+            >
               ALL (0)
             </button>
-
-            <button class="filter-btn" data-status="completed" type="button">
+            <button
+              class="filter-btn"
+              data-i18n="dashboard.html.completed_0"
+              data-status="completed"
+              type="button"
+            >
               COMPLETED (0)
             </button>
-
-            <button class="filter-btn" data-status="incomplete" type="button">
+            <button
+              class="filter-btn"
+              data-i18n="dashboard.html.incomplete_0"
+              data-status="incomplete"
+              type="button"
+            >
               INCOMPLETE (0)
             </button>
-
-            <button class="filter-btn" data-status="dropped" type="button">
+            <button
+              class="filter-btn"
+              data-i18n="dashboard.html.dropped_0"
+              data-status="dropped"
+              type="button"
+            >
               DROPPED (0)
             </button>
           </div>
-
           <div class="search-container">
             <input
-              type="search"
+              aria-label="Search my list"
+              data-i18n-aria-label="dashboard.attr.search_my_list"
+              data-i18n-placeholder="dashboard.attr.search_anime_in_my_list"
               id="search-input"
               placeholder="Search anime in my list..."
-              aria-label="Search my list"
+              type="search"
             />
           </div>
         </section>
       </div>
-
       <!-- Entries -->
-      <section class="entries-grid" id="entries-grid" aria-label="My entries">
+      <section
+        aria-label="My entries"
+        class="entries-grid"
+        data-i18n-aria-label="dashboard.attr.my_entries"
+        id="entries-grid"
+      >
         <button class="add-new-card" id="add-new-btn" type="button">
           <span class="plus-icon">+</span>
-          <span class="add-label">ADD NEW</span>
+          <span class="add-label" data-i18n="dashboard.html.add_new"
+            >ADD NEW</span
+          >
         </button>
       </section>
-
       <p
-        id="dashboard-message"
-        class="dashboard-message"
-        role="status"
         aria-live="polite"
+        class="dashboard-message"
+        id="dashboard-message"
+        role="status"
       ></p>
     </main>
-
     <!-- Compass Button -->
     <div class="compass-launcher">
       <button
-        id="open-compass-btn"
-        class="compass-launch-btn"
-        type="button"
         aria-label="Open MyList Compass"
+        class="compass-launch-btn"
+        data-i18n-aria-label="dashboard.attr.open_mylist_compass"
+        id="open-compass-btn"
         title="MyList Compass"
+        type="button"
       >
-        <img src="assets/compass-icon.png" alt="" class="compass-mascot" />
-        <span class="compass-icon-fallback" aria-hidden="true" hidden>✦</span>
+        <img alt="" class="compass-mascot" src="assets/compass-icon.png" />
+        <span aria-hidden="true" class="compass-icon-fallback" hidden=""
+          >✦</span
+        >
       </button>
     </div>
-
     <!-- Compass Modal -->
     <dialog
-      id="compass-dialog"
-      class="compass-dialog"
       aria-labelledby="compass-title"
+      class="compass-dialog"
+      id="compass-dialog"
     >
       <button
-        id="close-compass-btn"
-        class="compass-close-btn"
-        type="button"
         aria-label="Close Compass"
+        class="compass-close-btn"
+        data-i18n-aria-label="dashboard.attr.close_compass"
+        id="close-compass-btn"
+        type="button"
       >
         ×
       </button>
-
       <div class="compass-dialog-scroll">
         <div class="compass-header">
-          <span class="compass-kicker">YOUR PERSONAL GUIDE</span>
-
+          <span
+            class="compass-kicker"
+            data-i18n="dashboard.html.your_personal_guide"
+            >YOUR PERSONAL GUIDE</span
+          >
           <h2 id="compass-title">MYLIST <span>COMPASS ✦</span></h2>
-
-          <p class="compass-intro">
+          <p
+            class="compass-intro"
+            data-i18n="dashboard.html.tell_us_how_you_feel_and_let_your_compass_guide_you_toward_your_next_story"
+          >
             Tell us how you feel, and let your Compass guide you toward your
             next story.
           </p>
         </div>
-
         <form id="compass-form">
           <!-- Current Mood -->
           <fieldset class="compass-group">
             <legend>
-              <span class="compass-number">01.</span>
-              How are you feeling right now?
+              <span class="compass-number">01.</span
+              ><span data-i18n="dashboard.html.how_are_you_feeling_right_now"
+                >How are you feeling right now?</span
+              >
             </legend>
-
             <div class="compass-options">
               <label class="compass-option">
                 <input
-                  type="radio"
                   name="current_mood"
+                  required=""
+                  type="radio"
                   value="happy"
-                  required
                 />
-                <span>😊 Happy</span>
+                <span data-i18n="dashboard.html.happy">😊 Happy</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="current_mood" value="sad" />
-                <span>😢 Sad</span>
+                <input name="current_mood" type="radio" value="sad" />
+                <span data-i18n="dashboard.html.sad">😢 Sad</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="current_mood" value="anxious" />
-                <span>😰 Anxious</span>
+                <input name="current_mood" type="radio" value="anxious" />
+                <span data-i18n="dashboard.html.anxious">😰 Anxious</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="current_mood" value="calm" />
-                <span>😌 Calm</span>
+                <input name="current_mood" type="radio" value="calm" />
+                <span data-i18n="dashboard.html.calm">😌 Calm</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="current_mood" value="tired" />
-                <span>😴 Tired</span>
+                <input name="current_mood" type="radio" value="tired" />
+                <span data-i18n="dashboard.html.tired">😴 Tired</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="current_mood" value="excited" />
-                <span>🤩 Excited</span>
+                <input name="current_mood" type="radio" value="excited" />
+                <span data-i18n="dashboard.html.excited">🤩 Excited</span>
               </label>
             </div>
           </fieldset>
-
           <!-- Desired Emotion -->
           <fieldset class="compass-group">
             <legend>
-              <span class="compass-number">02.</span>
-              How would you like to feel?
+              <span class="compass-number">02.</span
+              ><span data-i18n="dashboard.html.how_would_you_like_to_feel"
+                >How would you like to feel?</span
+              >
             </legend>
-
             <div class="compass-options">
               <label class="compass-option">
                 <input
-                  type="radio"
                   name="desired_emotion"
+                  required=""
+                  type="radio"
                   value="joy"
-                  required
                 />
-                <span>✨ Joy</span>
+                <span data-i18n="dashboard.html.joy">✨ Joy</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="desired_emotion" value="comfort" />
-                <span>💜 Comfort</span>
+                <input name="desired_emotion" type="radio" value="comfort" />
+                <span data-i18n="dashboard.html.comfort">💜 Comfort</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="desired_emotion" value="calm" />
-                <span>🌙 Peace</span>
+                <input name="desired_emotion" type="radio" value="calm" />
+                <span data-i18n="dashboard.html.peace">🌙 Peace</span>
               </label>
-
               <label class="compass-option">
                 <input
-                  type="radio"
                   name="desired_emotion"
+                  type="radio"
                   value="inspiration"
                 />
-                <span>🌟 Inspiration</span>
+                <span data-i18n="dashboard.html.inspiration"
+                  >🌟 Inspiration</span
+                >
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="desired_emotion" value="thrill" />
-                <span>⚡ Excitement</span>
+                <input name="desired_emotion" type="radio" value="thrill" />
+                <span data-i18n="dashboard.html.excitement">⚡ Excitement</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="desired_emotion" value="energy" />
-                <span>🔥 Energy</span>
+                <input name="desired_emotion" type="radio" value="energy" />
+                <span data-i18n="dashboard.html.energy">🔥 Energy</span>
               </label>
             </div>
           </fieldset>
-
           <!-- Available Time -->
           <fieldset class="compass-group">
             <legend>
-              <span class="compass-number">03.</span>
-              How much time do you have?
+              <span class="compass-number">03.</span
+              ><span data-i18n="dashboard.html.how_much_time_do_you_have"
+                >How much time do you have?</span
+              >
             </legend>
-
-            <div class="compass-options">
-              <label class="compass-option">
-                <input type="radio" name="available_time" value="30" required />
-                <span>30 min</span>
-              </label>
-
-              <label class="compass-option">
-                <input type="radio" name="available_time" value="60" />
-                <span>1 hour</span>
-              </label>
-
-              <label class="compass-option">
-                <input type="radio" name="available_time" value="90" />
-                <span>1.5 hours</span>
-              </label>
-
-              <label class="compass-option">
-                <input type="radio" name="available_time" value="120" />
-                <span>2 hours</span>
-              </label>
-
-              <label class="compass-option">
-                <input type="radio" name="available_time" value="180plus" />
-                <span>No time limit</span>
-              </label>
-            </div>
-          </fieldset>
-
-          <!-- Content Type -->
-          <fieldset class="compass-group">
-            <legend>
-              <span class="compass-number">04.</span>
-              What would you like to watch?
-            </legend>
-
             <div class="compass-options">
               <label class="compass-option">
                 <input
+                  name="available_time"
+                  required=""
                   type="radio"
-                  name="content_type"
-                  value="movie"
-                  required
+                  value="30"
                 />
-                <span>🎬 Movie</span>
+                <span data-i18n="dashboard.html.30_min">30 min</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="content_type" value="series" />
-                <span>📺 Series</span>
+                <input name="available_time" type="radio" value="60" />
+                <span data-i18n="dashboard.html.1_hour">1 hour</span>
               </label>
-
               <label class="compass-option">
-                <input type="radio" name="content_type" value="either" />
-                <span>💫 Surprise me</span>
+                <input name="available_time" type="radio" value="90" />
+                <span data-i18n="dashboard.html.1_5_hours">1.5 hours</span>
+              </label>
+              <label class="compass-option">
+                <input name="available_time" type="radio" value="120" />
+                <span data-i18n="dashboard.html.2_hours">2 hours</span>
+              </label>
+              <label class="compass-option">
+                <input name="available_time" type="radio" value="180plus" />
+                <span data-i18n="dashboard.html.no_time_limit"
+                  >No time limit</span
+                >
               </label>
             </div>
           </fieldset>
-
+          <!-- Content Type -->
+          <fieldset class="compass-group">
+            <legend>
+              <span class="compass-number">04.</span
+              ><span data-i18n="dashboard.html.what_would_you_like_to_watch"
+                >What would you like to watch?</span
+              >
+            </legend>
+            <div class="compass-options">
+              <label class="compass-option">
+                <input
+                  name="content_type"
+                  required=""
+                  type="radio"
+                  value="movie"
+                />
+                <span data-i18n="dashboard.html.movie">🎬 Movie</span>
+              </label>
+              <label class="compass-option">
+                <input name="content_type" type="radio" value="series" />
+                <span data-i18n="dashboard.html.series">📺 Series</span>
+              </label>
+              <label class="compass-option">
+                <input name="content_type" type="radio" value="either" />
+                <span data-i18n="dashboard.html.surprise_me"
+                  >💫 Surprise me</span
+                >
+              </label>
+            </div>
+          </fieldset>
           <!-- Compass History -->
           <label
             class="compass-save-history"
@@ -328,9 +409,7 @@
             "
           >
             <input
-              type="checkbox"
               name="save_history"
-              value="true"
               style="
                 width: 18px;
                 height: 18px;
@@ -338,10 +417,15 @@
                 accent-color: #c080dd;
                 flex-shrink: 0;
               "
+              type="checkbox"
+              value="true"
             />
             <span>
-              <strong>Save this Compass search</strong>
+              <strong data-i18n="dashboard.html.save_this_compass_search"
+                >Save this Compass search</strong
+              >
               <small
+                data-i18n="dashboard.html.save_your_selected_mood_desired_emotion_time_content_type_and_recommended_titles_to_y"
                 style="
                   display: block;
                   margin-top: 5px;
@@ -354,28 +438,32 @@
               </small>
             </span>
           </label>
-
           <!-- Search -->
           <button class="compass-submit-btn" type="submit">
-            SEARCH <span aria-hidden="true">→</span>
+            <span data-i18n="dashboard.html.search">SEARCH</span
+            ><span aria-hidden="true">→</span>
           </button>
-
-          <p class="compass-privacy-note">
+          <p
+            class="compass-privacy-note"
+            data-i18n="dashboard.html.your_compass_search_is_not_saved_unless_you_choose_to_save_it"
+          >
             Your Compass search is not saved unless you choose to save it.
           </p>
-
           <!-- Preview -->
           <section
-            id="compass-preview"
-            class="compass-preview"
             aria-live="polite"
-            hidden
+            class="compass-preview"
+            hidden=""
+            id="compass-preview"
           >
-            <h3>Your Compass request ✦</h3>
-
+            <h3 data-i18n="dashboard.html.your_compass_request">
+              Your Compass request ✦
+            </h3>
             <p id="compass-preview-text"></p>
-
-            <p class="compass-preview-note">
+            <p
+              class="compass-preview-note"
+              data-i18n="dashboard.html.personalized_recommendations_will_appear_here_when_the_recommendation_engine_is_conne"
+            >
               Personalized recommendations will appear here when the
               recommendation engine is connected.
             </p>
@@ -383,18 +471,22 @@
         </form>
       </div>
     </dialog>
-
     <!-- Entry Modal -->
-    <dialog id="entry-dialog" class="entry-dialog" aria-label="Add new entry">
+    <dialog
+      aria-label="Add new entry"
+      class="entry-dialog"
+      data-i18n-aria-label="dashboard.attr.add_new_entry"
+      id="entry-dialog"
+    >
       <button
-        id="close-entry-dialog"
-        class="entry-dialog-close"
-        type="button"
         aria-label="Close"
+        class="entry-dialog-close"
+        data-i18n-aria-label="dashboard.attr.close"
+        id="close-entry-dialog"
+        type="button"
       >
         ×
       </button>
-
       <div class="entry-dialog-scroll">
         <form id="entry-form">
           <div class="entry-top">
@@ -402,143 +494,175 @@
             <div class="entry-photo-box">
               <label class="entry-photo" for="entry-photo-input">
                 <input
+                  accept="image/png,image/jpeg,image/webp,image/gif"
                   id="entry-photo-input"
                   name="photo"
                   type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
                 />
-
-                <span class="entry-photo-label">ADD PHOTO</span>
+                <span
+                  class="entry-photo-label"
+                  data-i18n="dashboard.html.add_photo"
+                  >ADD PHOTO</span
+                >
                 <span class="entry-photo-plus">+</span>
-
                 <img
-                  id="entry-photo-preview"
-                  class="entry-photo-preview"
                   alt="Selected cover"
-                  hidden
+                  class="entry-photo-preview"
+                  data-i18n-alt="dashboard.attr.selected_cover"
+                  hidden=""
+                  id="entry-photo-preview"
                 />
               </label>
-
               <button
-                type="button"
-                id="remove-photo-btn"
                 class="remove-photo-btn"
-                hidden
+                data-i18n="dashboard.html.remove_photo"
+                hidden=""
+                id="remove-photo-btn"
+                type="button"
               >
                 REMOVE PHOTO
               </button>
             </div>
-
             <!-- Details -->
             <div class="entry-fields">
               <input
+                aria-label="Name"
                 class="entry-title"
-                type="text"
+                data-i18n-aria-label="dashboard.attr.name"
+                data-i18n-placeholder="dashboard.attr.name"
+                maxlength="255"
                 name="title"
                 placeholder="Name"
-                aria-label="Name"
-                maxlength="255"
-                required
+                required=""
+                type="text"
               />
-
               <div class="entry-field entry-genre-field">
-                <span id="entry-genre-label">Genres:</span>
+                <span data-i18n="dashboard.html.genres" id="entry-genre-label"
+                  >Genres:</span
+                >
                 <div class="entry-genre-control">
-                  <input type="hidden" name="genre" id="entry-genre-value" />
+                  <input id="entry-genre-value" name="genre" type="hidden" />
                   <details class="entry-genre-picker" id="entry-genre-picker">
                     <summary
-                      id="entry-genre-summary"
                       aria-labelledby="entry-genre-label entry-genre-summary"
+                      id="entry-genre-summary"
                     >
-                      <span id="entry-genre-selection">Select genres...</span>
+                      <span
+                        data-i18n="dashboard.html.select_genres"
+                        id="entry-genre-selection"
+                        >Select genres...</span
+                      >
                     </summary>
                     <div
+                      aria-label="Available genres"
                       class="entry-genre-options"
+                      data-i18n-aria-label="dashboard.attr.available_genres"
                       id="entry-genre-options"
                       role="group"
-                      aria-label="Available genres"
                     ></div>
                   </details>
                   <span
+                    aria-live="polite"
                     class="entry-genre-hint"
+                    data-i18n="dashboard.html.loading_genres"
                     id="entry-genre-hint"
                     role="status"
-                    aria-live="polite"
                     >Loading genres...</span
                   >
                 </div>
               </div>
-
               <label class="entry-field">
-                <span id="entry-length-label">Total Episodes:</span>
-                <input type="number" name="length" min="0" step="1" />
+                <span
+                  data-i18n="dashboard.html.total_episodes"
+                  id="entry-length-label"
+                  >Total Episodes:</span
+                >
+                <input min="0" name="length" step="1" type="number" />
               </label>
-
               <label class="entry-field">
-                <span>Status:</span>
+                <span data-i18n="dashboard.html.status">Status:</span>
                 <select name="status">
-                  <option value="incomplete">INCOMPLETE</option>
-                  <option value="completed">COMPLETED</option>
-                  <option value="dropped">DROPPED</option>
+                  <option
+                    data-i18n="dashboard.html.incomplete"
+                    value="incomplete"
+                  >
+                    INCOMPLETE
+                  </option>
+                  <option
+                    data-i18n="dashboard.html.completed"
+                    value="completed"
+                  >
+                    COMPLETED
+                  </option>
+                  <option data-i18n="dashboard.html.dropped" value="dropped">
+                    DROPPED
+                  </option>
                 </select>
               </label>
             </div>
           </div>
-
           <!-- Description -->
-          <label class="entry-description-label" for="entry-description">
+          <label
+            class="entry-description-label"
+            data-i18n="dashboard.html.description"
+            for="entry-description"
+          >
             Description:
           </label>
-
           <textarea
             id="entry-description"
             name="description"
             rows="3"
           ></textarea>
-
           <!-- Review -->
           <div class="entry-review">
-            <span class="entry-review-heading">My Review:</span>
-
+            <span
+              class="entry-review-heading"
+              data-i18n="dashboard.html.my_review"
+              >My Review:</span
+            >
             <div class="entry-rating-row">
               <div
-                id="entry-rating-stars"
-                class="entry-rating-stars"
-                role="group"
                 aria-label="Rating from 0.5 to 5 stars"
+                class="entry-rating-stars"
+                data-i18n-aria-label="dashboard.attr.rating_from_0_5_to_5_stars"
+                id="entry-rating-stars"
+                role="group"
               ></div>
-
-              <span id="entry-rating-value" class="entry-rating-value">
+              <span class="entry-rating-value" id="entry-rating-value">
                 (0/5)
               </span>
             </div>
-
             <input id="entry-rating" name="rating" type="hidden" value="" />
-
-            <label for="entry-review-text">Text:</label>
-
+            <label data-i18n="dashboard.html.text" for="entry-review-text"
+              >Text:</label
+            >
             <textarea id="entry-review-text" name="review" rows="2"></textarea>
           </div>
-
           <!-- Save -->
           <div class="entry-actions">
             <button
-              type="button"
-              id="delete-entry-btn"
               class="delete-entry-btn"
-              hidden
+              data-i18n="dashboard.html.delete"
+              hidden=""
+              id="delete-entry-btn"
+              type="button"
             >
               DELETE
             </button>
-
-            <button type="submit" class="save-entry-btn">SAVE</button>
+            <button
+              class="save-entry-btn"
+              data-i18n="dashboard.html.save"
+              type="submit"
+            >
+              SAVE
+            </button>
           </div>
-
           <p
-            id="entry-save-message"
-            class="entry-save-message"
-            role="status"
             aria-live="polite"
+            class="entry-save-message"
+            id="entry-save-message"
+            role="status"
           ></p>
         </form>
       </div>
