@@ -334,7 +334,13 @@ function createRecommendationCard(media) {
   const reasons = document.createElement("p");
 
   reasons.textContent = Array.isArray(media.reasons)
-    ? media.reasons.join(" · ")
+    ? media.reasons
+        .map((reason) => {
+          const key = `compass.reason.${reason}`;
+          const translation = translateCompass(key);
+          return translation === key ? reason : translation;
+        })
+        .join(" · ")
     : "";
 
   reasons.style.cssText = `

@@ -1,3 +1,11 @@
+const onboardingT = (key, params) =>
+  window.MyListI18n?.t(`onboarding.${key}`, params) ?? key;
+const onboardingGenreLabel = (name) => {
+  const key = `genre.${name}`;
+  const translated = window.MyListI18n?.t(key) ?? key;
+  return translated === key ? name : translated;
+};
+
 // Elements
 
 const genresStep = document.getElementById("genres-step");
@@ -32,24 +40,19 @@ const MAX_GENRES = 5;
 const selectedGenres = new Set();
 const availableGenres = new Map();
 
-const contentLabels = {
-  movie: "🎬 Movies",
-  series: "📺 Series",
-  either: "✨ Movies & Series",
-};
+const contentLabels = { movie: "movie", series: "series", either: "either" };
+const contentLabel = (value) => onboardingT(`contentLabel.${value}`);
 
 let isSaving = false;
 
 // Page Information
 
 if (previewNotice) {
-  previewNotice.textContent =
-    "Your preferences will be saved only when you click " +
-    "SAVE MY PROFILE. You can update them later.";
+  previewNotice.textContent = onboardingT("saveWarning");
 }
 
 if (previewBadge) {
-  previewBadge.textContent = "PROFILE SETUP";
+  previewBadge.textContent = onboardingT("profileSetup");
 }
 
 // Save Button
@@ -59,7 +62,7 @@ const saveProfileButton = document.createElement("button");
 saveProfileButton.id = "save-profile-btn";
 saveProfileButton.type = "button";
 saveProfileButton.className = "primary-button";
-saveProfileButton.textContent = "SAVE MY PROFILE →";
+saveProfileButton.textContent = onboardingT("saveButton");
 
 saveProfileButton.style.margin = "0 10px 12px 0";
 
@@ -83,7 +86,8 @@ function showStep(step) {
 
   const percent = step === "genres" ? 50 : 100;
 
-  progressText.textContent = step === "genres" ? "Step 1 of 2" : "Step 2 of 2";
+  progressText.textContent =
+    step === "genres" ? onboardingT("step1") : onboardingT("step2");
 
   progressPercent.textContent = `${percent}%`;
   progressFill.style.width = `${percent}%`;
@@ -99,7 +103,7 @@ function showStep(step) {
 function updateGenreSelection() {
   const count = selectedGenres.size;
 
-  genreCounter.textContent = `${count} of ${MAX_GENRES} selected`;
+  genreCounter.textContent = onboardingT("counter", { count, max: MAX_GENRES });
 
   genresNextButton.disabled = count < MIN_GENRES || count > MAX_GENRES;
 
@@ -127,7 +131,7 @@ function renderGenres(genres) {
     button.type = "button";
     button.className = "genre-chip";
     button.dataset.genreId = id;
-    button.textContent = genre.name;
+    button.textContent = onboardingGenreLabel(genre.name);
 
     button.setAttribute("aria-pressed", "false");
 
@@ -150,7 +154,7 @@ function renderGenres(genres) {
 // Load Options
 
 async function loadOnboardingOptions() {
-  genreStatus.textContent = "Loading genres...";
+  genreStatus.textContent = onboardingT("loading");
   genresNextButton.disabled = true;
 
   try {
@@ -161,17 +165,17 @@ async function loadOnboardingOptions() {
     });
 
     if (response.status === 401) {
-      throw new Error("Please log in to My List to continue.");
+      throw new Error(onboardingT("loginRequired"));
     }
 
     if (!response.ok) {
-      throw new Error("Unable to load your onboarding options.");
+      throw new Error(onboardingT("loadFailed"));
     }
 
     const data = await response.json();
 
     if (!Array.isArray(data.genres)) {
-      throw new Error("Invalid server response.");
+      throw new Error(onboardingT("invalidResponse"));
     }
 
     availableGenres.clear();
@@ -208,9 +212,8 @@ async function loadOnboardingOptions() {
     const completed = data.preferences?.onboarding_completed === true;
 
     genreStatus.textContent = completed
-      ? `${availableGenres.size} genres available. ` +
-        "Your saved preferences have been loaded."
-      : `${availableGenres.size} genres available.`;
+      ? onboardingT("loadedPreferences", { count: availableGenres.size })
+      : onboardingT("availableGenres", { count: availableGenres.size });
   } catch (error) {
     console.error("Onboarding loading error:", error);
 
@@ -261,20 +264,17 @@ contentNextButton.addEventListener("click", () => {
     const chip = document.createElement("span");
 
     chip.className = "selected-genre";
-    chip.textContent = availableGenres.get(id);
+    chip.textContent = onboardingGenreLabel(availableGenres.get(id));
 
     selectedGenresContainer.append(chip);
   });
 
-  selectedContentElement.textContent = contentLabels[selectedContent.value];
+  selectedContentElement.textContent = contentLabel(selectedContent.value);
 
   saveProfileButton.disabled = false;
-  saveProfileButton.textContent = "SAVE MY PROFILE →";
+  saveProfileButton.textContent = onboardingT("saveButton");
 
-  showSaveStatus(
-    "Your current choices have not been saved yet. " +
-      "Click SAVE MY PROFILE to update your preferences.",
-  );
+  showSaveStatus(onboardingT("unsavedNotice"));
 
   showStep("result");
 });
@@ -304,12 +304,12 @@ saveProfileButton.addEventListener("click", async () => {
     !selectedContent ||
     !Object.hasOwn(contentLabels, selectedContent.value)
   ) {
-    showSaveStatus("Please select a content type.");
+    showSaveStatus(onboardingT("selectContent"));
     return;
   }
 
   if (selectedGenres.size < MIN_GENRES || selectedGenres.size > MAX_GENRES) {
-    showSaveStatus("Please select 3 to 5 genres.");
+    showSaveStatus(onboardingT("selectGenres"));
     return;
   }
 
@@ -323,9 +323,9 @@ saveProfileButton.addEventListener("click", async () => {
   saveProfileButton.disabled = true;
   editProfileButton.disabled = true;
 
-  saveProfileButton.textContent = "SAVING...";
+  saveProfileButton.textContent = onboardingT("savingButton");
 
-  showSaveStatus("Saving your preferences to MyList Compass...");
+  showSaveStatus(onboardingT("savingNotice"));
 
   try {
     const response = await fetch("/api/compass/onboarding", {
@@ -343,37 +343,31 @@ saveProfileButton.addEventListener("click", async () => {
     const data = await response.json().catch(() => null);
 
     if (response.status === 401) {
-      throw new Error("Your session has expired. Please log in again.");
+      throw new Error(onboardingT("expired"));
     }
 
     if (!response.ok) {
-      throw new Error(data?.message || "Unable to save your preferences.");
+      throw new Error(data?.message || onboardingT("saveFailed"));
     }
 
     if (
       data?.saved !== true ||
       data?.preferences?.onboarding_completed !== true
     ) {
-      throw new Error("Unexpected response from the server.");
+      throw new Error(onboardingT("unexpectedResponse"));
     }
 
-    saveProfileButton.textContent = "SAVED ✓";
+    saveProfileButton.textContent = onboardingT("savedButton");
 
-    showSaveStatus(
-      "Your Compass profile has been saved successfully! " +
-        "Your favorite genres and content preferences " +
-        "are now stored in PostgreSQL.",
-    );
+    showSaveStatus(onboardingT("savedNotice"));
 
     console.log("MyList Compass: profile saved.", data.preferences);
   } catch (error) {
     console.error("Onboarding save error:", error);
 
-    saveProfileButton.textContent = "TRY AGAIN →";
+    saveProfileButton.textContent = onboardingT("retry");
 
-    showSaveStatus(
-      `Your changes were not confirmed as saved. ${error.message}`,
-    );
+    showSaveStatus(onboardingT("unconfirmed", { error: error.message }));
   } finally {
     isSaving = false;
     saveProfileButton.disabled = false;
@@ -384,3 +378,34 @@ saveProfileButton.addEventListener("click", async () => {
 // Initialization
 
 loadOnboardingOptions();
+
+// Language changes
+
+function refreshOnboardingLanguage() {
+  previewNotice.textContent = onboardingT("saveWarning");
+  previewBadge.textContent = onboardingT("profileSetup");
+  progressText.textContent = genresStep.hidden
+    ? onboardingT("step2")
+    : onboardingT("step1");
+  updateGenreSelection();
+  genreGrid.querySelectorAll(".genre-chip").forEach((button) => {
+    button.textContent = onboardingGenreLabel(
+      availableGenres.get(button.dataset.genreId),
+    );
+  });
+  selectedGenresContainer
+    .querySelectorAll(".selected-genre")
+    .forEach((chip, index) => {
+      const id = [...selectedGenres][index];
+      chip.textContent = onboardingGenreLabel(availableGenres.get(id));
+    });
+  const content = document.querySelector('input[name="content_type"]:checked');
+  if (content && !resultStep.hidden)
+    selectedContentElement.textContent = contentLabel(content.value);
+  if (!isSaving && !resultStep.hidden) {
+    saveProfileButton.textContent = onboardingT("saveButton");
+    // Do not overwrite saved/unsaved status, which may contain useful API errors.
+  }
+}
+
+document.addEventListener("mylist:languagechange", refreshOnboardingLanguage);

@@ -438,3 +438,37 @@ button {
     flex-wrap: wrap;
   }
 }
+
+/* Language selection */
+
+.onboarding-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.onboarding-language-switch {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  background: #e9dcf6;
+  border-radius: 999px;
+}
+.onboarding-language-switch .language-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 12px;
+  min-height: 34px;
+  background: transparent;
+  color: var(--purple);
+  font-weight: 700;
+}
+.onboarding-language-switch .language-button[aria-pressed="true"] {
+  background: var(--purple);
+  color: var(--white);
+}
+.onboarding-language-switch .language-button:focus-visible {
+  outline: 2px solid var(--lavender);
+  outline-offset: 2px;
+}

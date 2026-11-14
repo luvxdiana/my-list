@@ -613,6 +613,155 @@
     "compass.label.available_time.180plus": "No time limit",
   });
 
+  // Onboarding and recommendation reasons
+  Object.assign(translations.uk, {
+    "onboarding.pageTitle": "Відкрий свої вподобання | MyList Compass",
+    "onboarding.back": "← До My List",
+    "onboarding.profileSetup": "НАЛАШТУВАННЯ ПРОФІЛЮ",
+    "onboarding.eyebrow": "ТВІЙ ОСОБИСТИЙ COMPASS",
+    "onboarding.headline": "Відкриймо твої вподобання.",
+    "onboarding.description":
+      "Розкажи, що тобі подобається, і Compass підбере історії саме для тебе.",
+    "onboarding.preview":
+      "Попередній перегляд. Твої вподобання ще не збережено.",
+    "onboarding.step1": "Крок 1 із 2",
+    "onboarding.step2": "Крок 2 із 2",
+    "onboarding.genresTitle": "Які жанри тобі подобаються?",
+    "onboarding.genresHelp": "Вибери від 3 до 5 улюблених жанрів.",
+    "onboarding.loading": "Завантаження жанрів...",
+    "onboarding.counterInitial": "Вибрано 0 із 5",
+    "onboarding.counter": "Вибрано {count} із {max}",
+    "onboarding.continue": "ПРОДОВЖИТИ →",
+    "onboarding.contentTitle": "Що ти полюбляєш дивитися?",
+    "onboarding.contentHelp": "Вибери улюблений формат контенту.",
+    "onboarding.movies": "Фільми",
+    "onboarding.series": "Серіали",
+    "onboarding.both": "Обидва",
+    "onboarding.movieHelp": "Історії на один вечір",
+    "onboarding.seriesHelp": "Історії з продовженням",
+    "onboarding.bothHelp": "Мені подобаються всі формати",
+    "onboarding.backButton": "← НАЗАД",
+    "onboarding.seeProfile": "ПЕРЕГЛЯНУТИ ПРОФІЛЬ →",
+    "onboarding.profileTitle": "Твій профіль Compass",
+    "onboarding.profileHelp":
+      "Ці вподобання допоможуть Compass персоналізувати твої перші рекомендації.",
+    "onboarding.favoriteGenres": "Твої улюблені жанри",
+    "onboarding.preferredContent": "Твій улюблений формат",
+    "onboarding.resultNotice":
+      "Це попередній перегляд профілю. Дані ще не збережені.",
+    "onboarding.edit": "← ЗМІНИТИ ВИБІР",
+    "onboarding.footer": "MYLIST COMPASS ✦ ЗНАЙДИ СВІЙ НАПРЯМОК",
+    "onboarding.contentLabel.movie": "🎬 Фільми",
+    "onboarding.contentLabel.series": "📺 Серіали",
+    "onboarding.contentLabel.either": "✨ Фільми та серіали",
+    "onboarding.saveWarning":
+      "Твої вподобання буде збережено лише після натискання «ЗБЕРЕГТИ ПРОФІЛЬ». Ти зможеш змінити їх пізніше.",
+    "onboarding.saveButton": "ЗБЕРЕГТИ ПРОФІЛЬ →",
+    "onboarding.loginRequired": "Увійди в My List, щоб продовжити.",
+    "onboarding.loadFailed": "Не вдалося завантажити налаштування профілю.",
+    "onboarding.invalidResponse": "Некоректна відповідь сервера.",
+    "onboarding.loadedPreferences":
+      "Доступно жанрів: {count}. Збережені вподобання завантажено.",
+    "onboarding.availableGenres": "Доступно жанрів: {count}.",
+    "onboarding.unsavedNotice":
+      "Твій вибір ще не збережено. Натисни «ЗБЕРЕГТИ ПРОФІЛЬ», щоб оновити вподобання.",
+    "onboarding.selectContent": "Вибери формат контенту.",
+    "onboarding.selectGenres": "Вибери від 3 до 5 жанрів.",
+    "onboarding.savingButton": "ЗБЕРЕЖЕННЯ...",
+    "onboarding.savingNotice": "Зберігаємо твої вподобання в MyList Compass...",
+    "onboarding.expired": "Сеанс завершився. Увійди ще раз.",
+    "onboarding.saveFailed": "Не вдалося зберегти твої вподобання.",
+    "onboarding.unexpectedResponse": "Неочікувана відповідь сервера.",
+    "onboarding.savedButton": "ЗБЕРЕЖЕНО ✓",
+    "onboarding.savedNotice":
+      "Профіль Compass успішно збережено! Твої улюблені жанри та формат контенту тепер збережені в PostgreSQL.",
+    "onboarding.retry": "СПРОБУВАТИ ЗНОВУ →",
+    "onboarding.unconfirmed": "Збереження змін не підтверджено. {error}",
+    "compass.reason.Matches your desired emotion": "Відповідає бажаній емоції",
+    "compass.reason.Considers your current mood":
+      "Враховує твій поточний настрій",
+    "compass.reason.Matches your favorite genres":
+      "Збігається з улюбленими жанрами",
+    "compass.reason.Related to your favorite genres":
+      "Споріднений з улюбленими жанрами",
+    "compass.reason.Adjusted using your past emotional-fit feedback":
+      "Скориговано з урахуванням попередніх емоційних відгуків",
+  });
+  Object.assign(translations.en, {
+    "onboarding.pageTitle": "Discover Your Taste | MyList Compass",
+    "onboarding.back": "← Back to My List",
+    "onboarding.profileSetup": "PROFILE SETUP",
+    "onboarding.eyebrow": "YOUR PERSONAL COMPASS",
+    "onboarding.headline": "Let's discover your taste.",
+    "onboarding.description":
+      "Tell us what you love, and let Compass find stories that feel right for you.",
+    "onboarding.preview":
+      "Preview mode. Your preferences have not been saved yet.",
+    "onboarding.step1": "Step 1 of 2",
+    "onboarding.step2": "Step 2 of 2",
+    "onboarding.genresTitle": "What genres do you love?",
+    "onboarding.genresHelp": "Choose 3 to 5 genres that you enjoy the most.",
+    "onboarding.loading": "Loading genres...",
+    "onboarding.counterInitial": "0 of 5 selected",
+    "onboarding.counter": "{count} of {max} selected",
+    "onboarding.continue": "CONTINUE →",
+    "onboarding.contentTitle": "What do you prefer watching?",
+    "onboarding.contentHelp": "Choose your favorite type of content.",
+    "onboarding.movies": "Movies",
+    "onboarding.series": "Series",
+    "onboarding.both": "Both",
+    "onboarding.movieHelp": "Stories in one sitting",
+    "onboarding.seriesHelp": "Stories that unfold",
+    "onboarding.bothHelp": "I love all kinds of stories",
+    "onboarding.backButton": "← BACK",
+    "onboarding.seeProfile": "SEE MY PROFILE →",
+    "onboarding.profileTitle": "Your Compass Profile",
+    "onboarding.profileHelp":
+      "These preferences will help Compass personalize your first recommendations.",
+    "onboarding.favoriteGenres": "Your favorite genres",
+    "onboarding.preferredContent": "Your preferred content",
+    "onboarding.resultNotice":
+      "This is a preview of your initial profile. Nothing has been saved yet.",
+    "onboarding.edit": "← EDIT MY CHOICES",
+    "onboarding.footer": "MYLIST COMPASS ✦ FIND YOUR DIRECTION",
+    "onboarding.contentLabel.movie": "🎬 Movies",
+    "onboarding.contentLabel.series": "📺 Series",
+    "onboarding.contentLabel.either": "✨ Movies & Series",
+    "onboarding.saveWarning":
+      "Your preferences will be saved only when you click SAVE MY PROFILE. You can update them later.",
+    "onboarding.saveButton": "SAVE MY PROFILE →",
+    "onboarding.loginRequired": "Please log in to My List to continue.",
+    "onboarding.loadFailed": "Unable to load your onboarding options.",
+    "onboarding.invalidResponse": "Invalid server response.",
+    "onboarding.loadedPreferences":
+      "{count} genres available. Your saved preferences have been loaded.",
+    "onboarding.availableGenres": "{count} genres available.",
+    "onboarding.unsavedNotice":
+      "Your current choices have not been saved yet. Click SAVE MY PROFILE to update your preferences.",
+    "onboarding.selectContent": "Please select a content type.",
+    "onboarding.selectGenres": "Please select 3 to 5 genres.",
+    "onboarding.savingButton": "SAVING...",
+    "onboarding.savingNotice": "Saving your preferences to MyList Compass...",
+    "onboarding.expired": "Your session has expired. Please log in again.",
+    "onboarding.saveFailed": "Unable to save your preferences.",
+    "onboarding.unexpectedResponse": "Unexpected response from the server.",
+    "onboarding.savedButton": "SAVED ✓",
+    "onboarding.savedNotice":
+      "Your Compass profile has been saved successfully! Your favorite genres and content preferences are now stored in PostgreSQL.",
+    "onboarding.retry": "TRY AGAIN →",
+    "onboarding.unconfirmed":
+      "Your changes were not confirmed as saved. {error}",
+    "compass.reason.Matches your desired emotion":
+      "Matches your desired emotion",
+    "compass.reason.Considers your current mood": "Considers your current mood",
+    "compass.reason.Matches your favorite genres":
+      "Matches your favorite genres",
+    "compass.reason.Related to your favorite genres":
+      "Related to your favorite genres",
+    "compass.reason.Adjusted using your past emotional-fit feedback":
+      "Adjusted using your past emotional-fit feedback",
+  });
+
   function readLanguage() {
     try {
       const value = localStorage.getItem(STORAGE_KEY);

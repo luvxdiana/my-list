@@ -1,13 +1,16 @@
 <!doctype html>
-<html lang="en">
+<html lang="uk">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
 
-    <title>Discover Your Taste | MyList Compass</title>
+    <title data-i18n="onboarding.pageTitle">
+      Відкрий свої вподобання | MyList Compass
+    </title>
 
     <link rel="stylesheet" href="onboarding.css" />
+    <script src="i18n.js" defer></script>
     <script src="onboarding.js" defer></script>
   </head>
 
@@ -16,11 +19,40 @@
       <!-- Header -->
 
       <header class="onboarding-header">
-        <a href="dashboard.html" class="back-link"> ← Back to My List </a>
+        <a href="dashboard.html" class="back-link" data-i18n="onboarding.back"
+          >← До My List</a
+        >
 
         <div class="brand">MYLIST COMPASS <span>✦</span></div>
 
-        <span class="preview-badge">PREVIEW</span>
+        <div class="onboarding-header-actions">
+          <div
+            class="onboarding-language-switch"
+            role="group"
+            data-i18n-aria-label="language.label"
+            aria-label="Мова інтерфейсу"
+          >
+            <button
+              type="button"
+              class="language-button"
+              data-lang="uk"
+              aria-pressed="true"
+            >
+              UA
+            </button>
+            <button
+              type="button"
+              class="language-button"
+              data-lang="en"
+              aria-pressed="false"
+            >
+              EN
+            </button>
+          </div>
+          <span class="preview-badge" data-i18n="onboarding.profileSetup"
+            >НАЛАШТУВАННЯ ПРОФІЛЮ</span
+          >
+        </div>
       </header>
 
       <!-- Introduction -->
@@ -28,30 +60,26 @@
       <section class="introduction">
         <span class="intro-icon">✦</span>
 
-        <p class="eyebrow">YOUR PERSONAL COMPASS</p>
+        <p class="eyebrow" data-i18n="onboarding.eyebrow">
+          ТВІЙ ОСОБИСТИЙ COMPASS
+        </p>
 
-        <h1>
-          Let's discover
-          <span>your taste.</span>
-        </h1>
+        <h1 data-i18n="onboarding.headline">Відкриймо свої вподобання.</h1>
 
-        <p class="intro-description">
-          Tell us what you love, and let Compass find stories that feel right
-          for you.
+        <p class="intro-description" data-i18n="onboarding.description">
+          Розкажи, що тобі подобається, і Compass підбере історії саме для тебе.
         </p>
       </section>
 
-      <div class="preview-notice">
-        <strong>Preview mode.</strong>
-        Your preferences are not saved yet. We're testing the onboarding
-        experience.
+      <div class="preview-notice" data-i18n="onboarding.preview">
+        <strong>Попередній перегляд.</strong> Твої вподобання ще не збережено.
       </div>
 
       <!-- Progress -->
 
       <div class="progress-container">
         <div class="progress-label">
-          <span id="progress-text">Step 1 of 2</span>
+          <span id="progress-text">Крок 1 із 2</span>
           <span id="progress-percent">50%</span>
         </div>
 
@@ -67,28 +95,33 @@
           <span class="section-number">01.</span>
 
           <div>
-            <h2>What genres do you love?</h2>
+            <h2 data-i18n="onboarding.genresTitle">
+              Які жанри тобі подобаються?
+            </h2>
 
-            <p>Choose 3 to 5 genres that you enjoy the most.</p>
+            <p data-i18n="onboarding.genresHelp">
+              Вибери від 3 до 5 улюблених жанрів.
+            </p>
           </div>
         </div>
 
         <p id="genre-status" class="genre-status" role="status">
-          Loading genres...
+          Завантаження жанрів...
         </p>
 
         <div id="genre-grid" class="genre-grid"></div>
 
         <div class="selection-footer">
-          <span id="genre-counter">0 of 5 selected</span>
+          <span id="genre-counter">Вибрано 0 із 5</span>
 
           <button
             id="genres-next-btn"
+            data-i18n="onboarding.continue"
             class="primary-button"
             type="button"
             disabled
           >
-            CONTINUE →
+            ПРОДОВЖИТИ →
           </button>
         </div>
       </section>
@@ -100,9 +133,13 @@
           <span class="section-number">02.</span>
 
           <div>
-            <h2>What do you prefer watching?</h2>
+            <h2 data-i18n="onboarding.contentTitle">
+              Що ти полюбляєш дивитися?
+            </h2>
 
-            <p>Choose your favorite type of content.</p>
+            <p data-i18n="onboarding.contentHelp">
+              Вибери улюблений формат контенту.
+            </p>
           </div>
         </div>
 
@@ -111,41 +148,55 @@
             <input type="radio" name="content_type" value="movie" />
 
             <span class="content-icon">🎬</span>
-            <span class="content-name">Movies</span>
-            <span class="content-description"> Stories in one sitting </span>
+            <span class="content-name" data-i18n="onboarding.movies"
+              >Фільми</span
+            >
+            <span class="content-description" data-i18n="onboarding.movieHelp"
+              >Історії на один вечір</span
+            >
           </label>
 
           <label class="content-card">
             <input type="radio" name="content_type" value="series" />
 
             <span class="content-icon">📺</span>
-            <span class="content-name">Series</span>
-            <span class="content-description"> Stories that unfold </span>
+            <span class="content-name" data-i18n="onboarding.series"
+              >Серіали</span
+            >
+            <span class="content-description" data-i18n="onboarding.seriesHelp"
+              >Історії з продовженням</span
+            >
           </label>
 
           <label class="content-card">
             <input type="radio" name="content_type" value="either" />
 
             <span class="content-icon">✨</span>
-            <span class="content-name">Both</span>
-            <span class="content-description">
-              I love all kinds of stories
-            </span>
+            <span class="content-name" data-i18n="onboarding.both">Обидва</span>
+            <span class="content-description" data-i18n="onboarding.bothHelp"
+              >Мені подобаються всі формати</span
+            >
           </label>
         </div>
 
         <div class="selection-footer">
-          <button id="content-back-btn" class="secondary-button" type="button">
-            ← BACK
+          <button
+            id="content-back-btn"
+            data-i18n="onboarding.backButton"
+            class="secondary-button"
+            type="button"
+          >
+            ← НАЗАД
           </button>
 
           <button
             id="content-next-btn"
+            data-i18n="onboarding.seeProfile"
             class="primary-button"
             type="button"
             disabled
           >
-            SEE MY PROFILE →
+            ПЕРЕГЛЯНУТИ ПРОФІЛЬ →
           </button>
         </div>
       </section>
@@ -155,35 +206,39 @@
       <section id="result-step" class="onboarding-panel result-panel" hidden>
         <div class="result-icon">✦</div>
 
-        <h2>Your Compass Profile</h2>
+        <h2 data-i18n="onboarding.profileTitle">Твій профіль Compass</h2>
 
-        <p class="result-description">
-          These preferences will help Compass personalize your first
-          recommendations.
+        <p class="result-description" data-i18n="onboarding.profileHelp">
+          Ці вподобання допоможуть Compass персоналізувати твої перші
+          рекомендації.
         </p>
 
-        <h3>Your favorite genres</h3>
+        <h3 data-i18n="onboarding.favoriteGenres">Твої улюблені жанри</h3>
 
         <div id="selected-genres" class="selected-genres"></div>
 
-        <h3>Your preferred content</h3>
+        <h3 data-i18n="onboarding.preferredContent">Твій улюблений формат</h3>
 
         <p id="selected-content" class="selected-content"></p>
 
-        <div class="result-notice">
-          This is a preview of your initial profile. Nothing has been saved to
-          PostgreSQL yet.
+        <div class="result-notice" data-i18n="onboarding.resultNotice">
+          Це попередній перегляд профілю. Дані ще не збережені.
         </div>
 
-        <button id="edit-profile-btn" class="secondary-button" type="button">
-          ← EDIT MY CHOICES
+        <button
+          id="edit-profile-btn"
+          data-i18n="onboarding.edit"
+          class="secondary-button"
+          type="button"
+        >
+          ← ЗМІНИТИ ВИБІР
         </button>
       </section>
 
       <!-- Footer -->
 
-      <footer class="onboarding-footer">
-        MYLIST COMPASS ✦ FIND YOUR DIRECTION
+      <footer class="onboarding-footer" data-i18n="onboarding.footer">
+        MYLIST COMPASS ✦ ЗНАЙДИ СВІЙ НАПРЯМОК
       </footer>
     </main>
   </body>
