@@ -1,3 +1,9 @@
+// Localized interface text
+const catalogPageText = (value) => {
+  const key = window.MyListPageTextKeys?.[String(value)];
+  return key ? window.MyListI18n.t(key) : value;
+};
+
 // Catalog Administration
 
 const accessStatus = document.getElementById("access-status");
@@ -68,7 +74,7 @@ importPanel.style.marginTop = "24px";
 importPanel.hidden = true;
 
 const importHeading = document.createElement("h3");
-importHeading.textContent = "Import to Catalog";
+importHeading.textContent = catalogPageText("Import to Catalog");
 
 const importDescription = createParagraph(
   "This action creates a new media record in PostgreSQL. " +
@@ -90,7 +96,7 @@ importInput.style.maxWidth = "180px";
 
 const importButton = document.createElement("button");
 importButton.type = "button";
-importButton.textContent = "Import to Catalog";
+importButton.textContent = catalogPageText("Import to Catalog");
 importButton.disabled = true;
 
 const importStatus = createParagraph("");
@@ -139,11 +145,12 @@ async function checkAdministratorAccess() {
     const data = await getApiData("/api/catalog-admin/check");
 
     if (data.is_admin !== true) {
-      throw new Error("Administrator access required.");
+      throw new Error(catalogPageText("Administrator access required."));
     }
 
-    accessStatus.textContent =
-      "Administrator access granted. Catalog tools are available.";
+    accessStatus.textContent = catalogPageText(
+      "Administrator access granted. Catalog tools are available.",
+    );
 
     adminPanel.hidden = false;
   } catch (error) {
@@ -160,7 +167,9 @@ function displaySearchResults(results, type) {
   resultsContainer.replaceChildren();
 
   if (results.length === 0) {
-    resultsContainer.append(createParagraph("No results found."));
+    resultsContainer.append(
+      createParagraph(catalogPageText("No results found.")),
+    );
 
     resultsSection.hidden = false;
     return;
@@ -176,7 +185,7 @@ function displaySearchResults(results, type) {
     title.textContent = media.title;
 
     const metadata = createParagraph(
-      `${media.release_year ?? "Unknown year"} · ` +
+      `${media.release_year ?? catalogPageText("Unknown year")} · ` +
         `TMDB ID: ${media.tmdb_id}`,
     );
 
@@ -186,7 +195,7 @@ function displaySearchResults(results, type) {
 
     button.type = "button";
     button.className = "secondary-button";
-    button.textContent = "Review";
+    button.textContent = catalogPageText("Review");
 
     button.addEventListener("click", () => {
       reviewMedia(type, media.tmdb_id);
@@ -212,7 +221,9 @@ searchForm.addEventListener("submit", async (event) => {
   const query = searchQuery.value.trim();
 
   if (query.length < 2 || query.length > 100) {
-    searchStatus.textContent = "Enter a title containing 2–100 characters.";
+    searchStatus.textContent = catalogPageText(
+      "Enter a title containing 2–100 characters.",
+    );
     return;
   }
 
@@ -220,7 +231,7 @@ searchForm.addEventListener("submit", async (event) => {
   selectedMedia = null;
 
   searchButton.disabled = true;
-  searchStatus.textContent = "Searching TMDB...";
+  searchStatus.textContent = catalogPageText("Searching TMDB...");
 
   resultsSection.hidden = true;
   previewSection.hidden = true;
@@ -235,7 +246,7 @@ searchForm.addEventListener("submit", async (event) => {
     const data = await getApiData(`/api/tmdb/search?${params}`);
 
     if (!Array.isArray(data.results)) {
-      throw new Error("Unexpected search response.");
+      throw new Error(catalogPageText("Unexpected search response."));
     }
 
     displaySearchResults(data.results, type);
@@ -270,7 +281,9 @@ async function reviewMedia(type, tmdbId) {
 
   updateImportButton();
 
-  mediaDetails.replaceChildren(createParagraph("Loading media details..."));
+  mediaDetails.replaceChildren(
+    createParagraph(catalogPageText("Loading media details...")),
+  );
 
   matchDetails.replaceChildren();
 
@@ -296,7 +309,7 @@ async function reviewMedia(type, tmdbId) {
       !Array.isArray(media.genres) ||
       !Array.isArray(match.candidates)
     ) {
-      throw new Error("Unexpected media review response.");
+      throw new Error(catalogPageText("Unexpected media review response."));
     }
 
     // Media Details
@@ -305,48 +318,54 @@ async function reviewMedia(type, tmdbId) {
 
     addDetail(mediaDetails, "Title", media.title);
     addDetail(mediaDetails, "Category", media.category);
-    addDetail(mediaDetails, "Year", media.release_year);
+    addDetail(mediaDetails, catalogPageText("Year"), media.release_year);
 
     addDetail(
       mediaDetails,
-      "Duration",
+      catalogPageText("Duration"),
       media.duration_minutes ? `${media.duration_minutes} minutes` : "Unknown",
     );
 
     addDetail(
       mediaDetails,
-      "Genres",
+      catalogPageText("Genres"),
       media.genres.map((genre) => genre.name).join(", "),
     );
 
     addDetail(
       mediaDetails,
-      "Description",
-      media.description || "No description",
+      catalogPageText("Description"),
+      media.description || catalogPageText("No description"),
     );
 
     addDetail(mediaDetails, "TMDB ID", media.tmdb_id);
 
     // Catalog Matching
 
-    addDetail(matchDetails, "Match status", match.match_status);
+    addDetail(
+      matchDetails,
+      catalogPageText("Match status"),
+      match.match_status,
+    );
 
     addDetail(
       matchDetails,
-      "Title variants checked",
+      catalogPageText("Title variants checked"),
       match.title_variants_checked,
     );
 
     if (match.candidates.length === 0) {
       matchDetails.append(
-        createParagraph("No matching entries found in the local catalog."),
+        createParagraph(
+          catalogPageText("No matching entries found in the local catalog."),
+        ),
       );
     } else {
       for (const candidate of match.candidates) {
         const item = document.createElement("div");
         item.className = "match-candidate";
 
-        addDetail(item, "Local ID", candidate.media_id);
+        addDetail(item, catalogPageText("Local ID"), candidate.media_id);
         addDetail(item, "Title", candidate.title);
         addDetail(item, "Reason", candidate.match_reason);
 
@@ -378,8 +397,9 @@ async function reviewMedia(type, tmdbId) {
 
       importPanel.hidden = false;
 
-      importStatus.textContent =
-        "Candidate for import. Final checks will run on the server.";
+      importStatus.textContent = catalogPageText(
+        "Candidate for import. Final checks will run on the server.",
+      );
     } else if (match.match_status === "already_linked") {
       reviewNotice.textContent =
         "This media is already linked to MyList. " + "Import is unavailable.";
@@ -426,7 +446,9 @@ async function importSelectedMedia() {
   importInput.disabled = true;
   searchButton.disabled = true;
 
-  importStatus.textContent = "Importing media into PostgreSQL...";
+  importStatus.textContent = catalogPageText(
+    "Importing media into PostgreSQL...",
+  );
 
   try {
     const response = await fetch("/api/catalog-admin/import", {

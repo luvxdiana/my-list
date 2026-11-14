@@ -1,3 +1,9 @@
+// Localized interface text
+const annotationPageText = (value) => {
+  const key = window.MyListPageTextKeys?.[String(value)];
+  return key ? window.MyListI18n.t(key) : value;
+};
+
 // Elements
 
 const annotationForm = document.getElementById("annotation-form");
@@ -19,39 +25,39 @@ mediaSelect.name = "media_id";
 const emotions = [
   {
     code: "joy",
-    name: "Joy",
+    name: annotationPageText("Joy"),
     icon: "😊",
-    description: "Happiness, amusement, delight",
+    description: annotationPageText("Happiness, amusement, delight"),
   },
   {
     code: "comfort",
-    name: "Comfort",
+    name: annotationPageText("Comfort"),
     icon: "💜",
-    description: "Warmth, reassurance, emotional safety",
+    description: annotationPageText("Warmth, reassurance, emotional safety"),
   },
   {
     code: "calm",
-    name: "Peace",
+    name: annotationPageText("Peace"),
     icon: "🌙",
-    description: "Relaxation, tranquility, reduced tension",
+    description: annotationPageText("Relaxation, tranquility, reduced tension"),
   },
   {
     code: "inspiration",
-    name: "Inspiration",
+    name: annotationPageText("Inspiration"),
     icon: "✨",
-    description: "Motivation, hope, encouragement",
+    description: annotationPageText("Motivation, hope, encouragement"),
   },
   {
     code: "thrill",
-    name: "Excitement",
+    name: annotationPageText("Excitement"),
     icon: "⚡",
-    description: "Suspense, anticipation, excitement",
+    description: annotationPageText("Suspense, anticipation, excitement"),
   },
   {
     code: "energy",
-    name: "Energy",
+    name: annotationPageText("Energy"),
     icon: "🔥",
-    description: "Stimulation, enthusiasm, activation",
+    description: annotationPageText("Stimulation, enthusiasm, activation"),
   },
 ];
 
@@ -66,7 +72,7 @@ function setCatalogMessage(message) {
 // Load Catalog
 
 async function loadMediaCatalog() {
-  setCatalogMessage("Loading titles...");
+  setCatalogMessage(annotationPageText("Loading titles..."));
 
   try {
     const response = await fetch("/api/compass/catalog", {
@@ -76,22 +82,26 @@ async function loadMediaCatalog() {
     });
 
     if (response.status === 401) {
-      throw new Error("Please log in to My List to load the catalog.");
+      throw new Error(
+        annotationPageText("Please log in to My List to load the catalog."),
+      );
     }
 
     if (!response.ok) {
-      throw new Error("Unable to load the media catalog.");
+      throw new Error(annotationPageText("Unable to load the media catalog."));
     }
 
     const data = await response.json();
 
     if (!Array.isArray(data.media)) {
-      throw new Error("Invalid catalog response.");
+      throw new Error(annotationPageText("Invalid catalog response."));
     }
 
     mediaCatalog.clear();
 
-    mediaSelect.replaceChildren(new Option("Select a title", ""));
+    mediaSelect.replaceChildren(
+      new Option(annotationPageText("Select a title"), ""),
+    );
 
     data.media.forEach((media) => {
       if (media.id == null || typeof media.title !== "string") {
@@ -110,7 +120,7 @@ async function loadMediaCatalog() {
     });
 
     if (mediaCatalog.size === 0) {
-      setCatalogMessage("No titles available");
+      setCatalogMessage(annotationPageText("No titles available"));
       return;
     }
 
@@ -133,7 +143,7 @@ function createSelect(id, name, options) {
   select.name = name;
   select.required = true;
 
-  select.append(new Option("Select a value", ""));
+  select.append(new Option(annotationPageText("Select a value"), ""));
 
   options.forEach((option) => {
     select.append(new Option(option.label, String(option.value)));
@@ -157,30 +167,30 @@ emotions.forEach((emotion) => {
 
   const intensityLabel = document.createElement("label");
   intensityLabel.htmlFor = `intensity-${emotion.code}`;
-  intensityLabel.textContent = "Intensity";
+  intensityLabel.textContent = annotationPageText("Intensity");
 
   const intensitySelect = createSelect(
     `intensity-${emotion.code}`,
     `intensity_${emotion.code}`,
     [
-      { value: 0, label: "0 — None" },
-      { value: 1, label: "1 — Weak" },
-      { value: 2, label: "2 — Moderate" },
-      { value: 3, label: "3 — Strong" },
+      { value: 0, label: annotationPageText("0 — None") },
+      { value: 1, label: annotationPageText("1 — Weak") },
+      { value: 2, label: annotationPageText("2 — Moderate") },
+      { value: 3, label: annotationPageText("3 — Strong") },
     ],
   );
 
   const confidenceLabel = document.createElement("label");
   confidenceLabel.htmlFor = `confidence-${emotion.code}`;
-  confidenceLabel.textContent = "Confidence";
+  confidenceLabel.textContent = annotationPageText("Confidence");
 
   const confidenceSelect = createSelect(
     `confidence-${emotion.code}`,
     `confidence_${emotion.code}`,
     [
-      { value: 1, label: "1 — Low" },
-      { value: 2, label: "2 — Medium" },
-      { value: 3, label: "3 — High" },
+      { value: 1, label: annotationPageText("1 — Low") },
+      { value: 2, label: annotationPageText("2 — Medium") },
+      { value: 3, label: annotationPageText("3 — High") },
     ],
   );
 
@@ -255,7 +265,7 @@ function showAnnotationPreview(payload) {
   const media = mediaCatalog.get(payload.media_id);
 
   const heading = document.createElement("h2");
-  heading.textContent = "Annotation Preview ✦";
+  heading.textContent = annotationPageText("Annotation Preview ✦");
 
   const mediaInfo = document.createElement("p");
   mediaInfo.textContent = `Media: ${media.title}`;
@@ -267,7 +277,9 @@ function showAnnotationPreview(payload) {
   sourceInfo.textContent = `Evidence source: ${payload.evidence_source}`;
 
   const validationInfo = document.createElement("p");
-  validationInfo.textContent = "Server validation: Passed ✓";
+  validationInfo.textContent = annotationPageText(
+    "Server validation: Passed ✓",
+  );
 
   const table = document.createElement("table");
   table.className = "results-table";
@@ -275,7 +287,11 @@ function showAnnotationPreview(payload) {
   const thead = document.createElement("thead");
   const headerRow = document.createElement("tr");
 
-  ["Emotion", "Intensity", "Confidence"].forEach((text) => {
+  [
+    annotationPageText("Emotion"),
+    annotationPageText("Intensity"),
+    annotationPageText("Confidence"),
+  ].forEach((text) => {
     const th = document.createElement("th");
 
     th.textContent = text;
@@ -340,8 +356,8 @@ annotationForm.addEventListener("submit", async (event) => {
   const payload = buildAnnotationPayload(formData);
 
   if (!mediaCatalog.has(payload.media_id)) {
-    showAnnotationMessage("Invalid selection", [
-      "Please select a media item from the catalog.",
+    showAnnotationMessage(annotationPageText("Invalid selection"), [
+      annotationPageText("Please select a media item from the catalog."),
     ]);
 
     return;
@@ -367,21 +383,26 @@ annotationForm.addEventListener("submit", async (event) => {
 
     if (response.status === 400) {
       showAnnotationMessage(
-        "Please check your answers",
+        annotationPageText("Please check your answers"),
         Array.isArray(data?.errors)
           ? data.errors
-          : ["Invalid annotation data."],
+          : [annotationPageText("Invalid annotation data.")],
       );
 
       return;
     }
 
     if (response.status === 401) {
-      throw new Error("Your session has expired. Please log in again.");
+      throw new Error(
+        annotationPageText("Your session has expired. Please log in again."),
+      );
     }
 
     if (!response.ok) {
-      throw new Error(data?.message || "Unable to validate your annotation.");
+      throw new Error(
+        data?.message ||
+          annotationPageText("Unable to validate your annotation."),
+      );
     }
 
     if (
@@ -389,15 +410,15 @@ annotationForm.addEventListener("submit", async (event) => {
       data?.saved !== false ||
       data?.preview_only !== true
     ) {
-      throw new Error("Unexpected validation response.");
+      throw new Error(annotationPageText("Unexpected validation response."));
     }
 
     showAnnotationPreview(payload);
   } catch (error) {
     console.error("Annotation validation error:", error);
 
-    showAnnotationMessage("Validation unavailable", [
-      error.message || "Please try again.",
+    showAnnotationMessage(annotationPageText("Validation unavailable"), [
+      error.message || annotationPageText("Please try again."),
     ]);
   } finally {
     annotationSubmitButton.disabled = false;

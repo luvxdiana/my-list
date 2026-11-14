@@ -1,3 +1,9 @@
+// Localized interface text
+const consentPageText = (value) => {
+  const key = window.MyListPageTextKeys?.[String(value)];
+  return key ? window.MyListI18n.t(key) : value;
+};
+
 // Research Elements
 
 const researchInfoPanel = document.getElementById("research-info-panel");
@@ -39,7 +45,9 @@ researchDocumentPanel.hidden = true;
 
 const researchDocumentHeading = document.createElement("h3");
 
-researchDocumentHeading.textContent = "Research Preview Document";
+researchDocumentHeading.textContent = consentPageText(
+  "Research Preview Document",
+);
 
 const researchDocumentVersion = document.createElement("p");
 
@@ -88,7 +96,9 @@ function lockResearchPreview(message) {
   researchReviewCheckbox.disabled = true;
 
   researchContinueButton.disabled = true;
-  researchContinueButton.textContent = "CONTINUE TO FORM PREVIEW →";
+  researchContinueButton.textContent = consentPageText(
+    "CONTINUE TO FORM PREVIEW →",
+  );
 
   researchAnnotationForm.hidden = true;
   researchDocumentPanel.hidden = true;
@@ -103,7 +113,9 @@ function unlockResearchPreview(message) {
   researchReviewCheckbox.disabled = false;
 
   researchContinueButton.disabled = true;
-  researchContinueButton.textContent = "CONTINUE TO FORM PREVIEW →";
+  researchContinueButton.textContent = consentPageText(
+    "CONTINUE TO FORM PREVIEW →",
+  );
 
   researchDocumentPanel.hidden = false;
 
@@ -120,17 +132,23 @@ async function loadResearchDocument() {
   });
 
   if (response.status === 401) {
-    throw new Error("Your session has expired. Please log in again.");
+    throw new Error(
+      consentPageText("Your session has expired. Please log in again."),
+    );
   }
 
   if (response.status === 403) {
     throw new Error(
-      "You do not have permission to view this research document.",
+      consentPageText(
+        "You do not have permission to view this research document.",
+      ),
     );
   }
 
   if (!response.ok) {
-    throw new Error("Unable to load the research preview document.");
+    throw new Error(
+      consentPageText("Unable to load the research preview document."),
+    );
   }
 
   const data = await response.json();
@@ -151,7 +169,7 @@ async function loadResearchDocument() {
     typeof documentData.hash !== "string" ||
     !/^[a-f0-9]{64}$/.test(documentData.hash)
   ) {
-    throw new Error("Unexpected research document response.");
+    throw new Error(consentPageText("Unexpected research document response."));
   }
 
   // Display Document
@@ -173,7 +191,9 @@ async function loadResearchDocument() {
 // Load Research Status
 
 async function loadResearchStatus() {
-  lockResearchPreview("Checking your research participation status...");
+  lockResearchPreview(
+    consentPageText("Checking your research participation status..."),
+  );
 
   try {
     const response = await fetch("/api/research/status", {
@@ -184,14 +204,18 @@ async function loadResearchStatus() {
 
     if (response.status === 401) {
       lockResearchPreview(
-        "Please log in to My List to access the research form preview.",
+        consentPageText(
+          "Please log in to My List to access the research form preview.",
+        ),
       );
 
       return;
     }
 
     if (!response.ok) {
-      throw new Error("Unable to verify research participation.");
+      throw new Error(
+        consentPageText("Unable to verify research participation."),
+      );
     }
 
     const data = await response.json();
@@ -200,7 +224,9 @@ async function loadResearchStatus() {
 
     if (data.status === "not_invited") {
       lockResearchPreview(
-        "You have not been invited to participate in this research.",
+        consentPageText(
+          "You have not been invited to participate in this research.",
+        ),
       );
 
       return;
@@ -235,8 +261,9 @@ async function loadResearchStatus() {
 
     // Load Document
 
-    researchStatusMessage.textContent =
-      "Loading the research preview document...";
+    researchStatusMessage.textContent = consentPageText(
+      "Loading the research preview document...",
+    );
 
     await loadResearchDocument();
 
@@ -261,7 +288,8 @@ async function loadResearchStatus() {
     console.error("Research preview loading error:", error);
 
     lockResearchPreview(
-      error.message || "Unable to prepare the research preview.",
+      error.message ||
+        consentPageText("Unable to prepare the research preview."),
     );
   }
 }
@@ -270,7 +298,9 @@ async function loadResearchStatus() {
 
 async function recordPreviewAcknowledgement() {
   if (!loadedPreviewDocument) {
-    throw new Error("Research preview document has not been loaded.");
+    throw new Error(
+      consentPageText("Research preview document has not been loaded."),
+    );
   }
 
   const response = await fetch("/api/research/documents/preview-acknowledge", {
@@ -291,7 +321,8 @@ async function recordPreviewAcknowledgement() {
 
   if (!response.ok) {
     const error = new Error(
-      data.message || "Unable to record preview acknowledgement.",
+      data.message ||
+        consentPageText("Unable to record preview acknowledgement."),
     );
 
     error.status = response.status;
@@ -316,7 +347,9 @@ async function recordPreviewAcknowledgement() {
     data.document_version !== PREVIEW_VERSION ||
     (!newlyRecorded && !previouslyRecorded)
   ) {
-    throw new Error("Unexpected preview acknowledgement response.");
+    throw new Error(
+      consentPageText("Unexpected preview acknowledgement response."),
+    );
   }
 
   return {
@@ -351,9 +384,13 @@ researchContinueButton.addEventListener("click", async () => {
   researchReviewCheckbox.disabled = true;
   researchContinueButton.disabled = true;
 
-  researchContinueButton.textContent = "RECORDING PREVIEW ACKNOWLEDGEMENT...";
+  researchContinueButton.textContent = consentPageText(
+    "RECORDING PREVIEW ACKNOWLEDGEMENT...",
+  );
 
-  researchStatusMessage.textContent = "Recording your test acknowledgement...";
+  researchStatusMessage.textContent = consentPageText(
+    "Recording your test acknowledgement...",
+  );
 
   try {
     // Server Acknowledgement
@@ -397,7 +434,8 @@ researchContinueButton.addEventListener("click", async () => {
     // Retry Allowed
 
     researchStatusMessage.textContent =
-      error.message || "Unable to record acknowledgement. Please try again.";
+      error.message ||
+      consentPageText("Unable to record acknowledgement. Please try again.");
   } finally {
     acknowledgementInProgress = false;
 
@@ -406,7 +444,9 @@ researchContinueButton.addEventListener("click", async () => {
 
       researchContinueButton.disabled = !researchReviewCheckbox.checked;
 
-      researchContinueButton.textContent = "CONTINUE TO FORM PREVIEW →";
+      researchContinueButton.textContent = consentPageText(
+        "CONTINUE TO FORM PREVIEW →",
+      );
     }
   }
 });

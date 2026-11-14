@@ -1,105 +1,114 @@
 <!doctype html>
-<html lang="en">
+
+<html lang="uk">
   <head>
-    <meta charset="UTF-8" />
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>Catalog Administration | MyList Compass</title>
-
-    <link rel="stylesheet" href="catalog-admin.css" />
-
-    <script src="catalog-admin.js" defer></script>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title data-i18n="final.text.0">
+      Адміністрування каталогу | MyList Compass
+    </title>
+    <link href="catalog-admin.css" rel="stylesheet" />
+    <script defer="True" src="i18n.js"></script>
+    <script defer="" src="catalog-admin.js"></script>
+    <link href="localization-pages.css" rel="stylesheet" />
   </head>
-
   <body>
+    <nav aria-label="Language" class="locale-switch">
+      <button
+        aria-pressed="false"
+        class="language-button"
+        data-lang="uk"
+        type="button"
+      >
+        UA</button
+      ><button
+        aria-pressed="false"
+        class="language-button"
+        data-lang="en"
+        type="button"
+      >
+        EN
+      </button>
+    </nav>
     <main class="admin-container">
       <!-- Header -->
-
       <header class="admin-header">
         <div>
           <span class="admin-label"> MYLIST COMPASS </span>
-
-          <h1>Catalog Administration</h1>
-
-          <p>Search TMDB and manage the research media catalog.</p>
-        </div>
-
-        <a href="/" class="back-link"> ← Back to MyList </a>
-      </header>
-
-      <!-- Access Status -->
-
-      <section id="access-status" class="status-box" role="status">
-        Checking administrator permissions...
-      </section>
-
-      <!-- Admin Panel -->
-
-      <div id="admin-panel" hidden>
-        <!-- Search -->
-
-        <section class="admin-card">
-          <h2>Search TMDB</h2>
-
-          <p class="section-description">
-            Find movies or television series in TMDB.
+          <h1 data-i18n="final.text.1">Адміністрування каталогу</h1>
+          <p data-i18n="final.text.2">
+            Шукай у TMDB та керуй дослідницьким каталогом медіатворів.
           </p>
-
+        </div>
+        <a class="back-link" data-i18n="final.text.3" href="/"
+          >← Повернутися до MyList</a
+        >
+      </header>
+      <!-- Access Status -->
+      <section
+        class="status-box"
+        data-i18n="final.text.4"
+        id="access-status"
+        role="status"
+      >
+        Перевірка прав адміністратора...
+      </section>
+      <!-- Admin Panel -->
+      <div hidden="" id="admin-panel">
+        <!-- Search -->
+        <section class="admin-card">
+          <h2 data-i18n="final.text.5">Пошук у TMDB</h2>
+          <p class="section-description" data-i18n="final.text.6">
+            Знайди фільми або серіали в TMDB.
+          </p>
           <form id="tmdb-search-form">
             <div class="search-controls">
-              <label>
-                Media type
-
-                <select id="media-type">
-                  <option value="movie">Movie</option>
-                  <option value="series">Series</option>
+              <label
+                ><span data-i18n="final.text.7">Тип медіатвору</span
+                ><select id="media-type">
+                  <option data-i18n="final.text.8" value="movie">Фільм</option>
+                  <option data-i18n="final.text.9" value="series">
+                    Серіал
+                  </option>
                 </select>
               </label>
-
-              <label class="search-input-group">
-                Title
-
-                <input
-                  type="text"
+              <label class="search-input-group"
+                ><span data-i18n="final.text.10">Назва</span
+                ><input
+                  data-i18n-placeholder="final.text.16"
                   id="search-query"
-                  placeholder="Enter a movie or series title"
-                  minlength="2"
                   maxlength="100"
-                  required
+                  minlength="2"
+                  placeholder="Введи назву фільму або серіалу"
+                  required=""
+                  type="text"
                 />
               </label>
-
-              <button type="submit" id="search-button">Search</button>
+              <button
+                data-i18n="final.text.11"
+                id="search-button"
+                type="submit"
+              >
+                Шукати
+              </button>
             </div>
           </form>
-
-          <p id="search-status" class="helper-text" role="status"></p>
+          <p class="helper-text" id="search-status" role="status"></p>
         </section>
-
         <!-- Results -->
-
-        <section id="search-results-section" class="admin-card" hidden>
-          <h2>Search Results</h2>
-
+        <section class="admin-card" hidden="" id="search-results-section">
+          <h2 data-i18n="final.text.12">Результати пошуку</h2>
           <div id="search-results"></div>
         </section>
-
         <!-- Preview -->
-
-        <section id="media-preview-section" class="admin-card" hidden>
-          <h2>Media Preview</h2>
-
+        <section class="admin-card" hidden="" id="media-preview-section">
+          <h2 data-i18n="final.text.13">Попередній перегляд медіатвору</h2>
           <div id="media-details"></div>
-
           <div class="divider"></div>
-
-          <h3>Catalog Matching</h3>
-
+          <h3 data-i18n="final.text.14">Порівняння з каталогом</h3>
           <div id="match-details"></div>
-
-          <p class="preview-warning">
-            Preview only. No changes will be made to PostgreSQL.
+          <p class="preview-warning" data-i18n="final.text.15">
+            Лише попередній перегляд. Зміни до PostgreSQL не вноситимуться.
           </p>
         </section>
       </div>
