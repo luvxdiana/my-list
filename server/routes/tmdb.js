@@ -10,6 +10,15 @@ const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const VALID_TYPES = new Set(["movie", "series"]);
 const MAX_CATALOG_ROWS = 5000;
 
+// Read-only TMDB access is opt-in in production.
+// Administrative import remains development-only in catalogAdmin.js.
+function isTmdbReadEnabled() {
+  return (
+    process.env.NODE_ENV === "development" ||
+    process.env.TMDB_READ_ONLY_ENABLED === "true"
+  );
+}
+
 // Helpers
 
 function getReleaseYear(date) {
@@ -281,7 +290,7 @@ function getTitleVariants(data, type) {
 router.get("/search", requireAuth, async (req, res) => {
   res.set("Cache-Control", "no-store");
 
-  if (process.env.NODE_ENV !== "development") {
+  if (!isTmdbReadEnabled()) {
     return res.status(404).json({
       message: "Not found.",
     });
@@ -353,7 +362,7 @@ router.get("/search", requireAuth, async (req, res) => {
 router.get("/details", requireAuth, async (req, res) => {
   res.set("Cache-Control", "no-store");
 
-  if (process.env.NODE_ENV !== "development") {
+  if (!isTmdbReadEnabled()) {
     return res.status(404).json({
       message: "Not found.",
     });
@@ -394,7 +403,7 @@ router.get("/details", requireAuth, async (req, res) => {
 router.get("/match", requireAuth, async (req, res) => {
   res.set("Cache-Control", "no-store");
 
-  if (process.env.NODE_ENV !== "development") {
+  if (!isTmdbReadEnabled()) {
     return res.status(404).json({
       message: "Not found.",
     });
