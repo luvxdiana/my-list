@@ -124,6 +124,48 @@ async function saveCompassHistory({
   }
 }
 
+// Library Genre Preferences
+
+async function loadLibraryPreferredGenres(userId) {
+  // Only positively rated movies and series contribute to the taste profile.
+  // Entry genres use the canonical names from public.genres, comma-separated.
+  const result = await pool.query(
+    `
+      SELECT genre.name, COUNT(*)::integer AS positive_count
+      FROM public.entries AS entry
+      CROSS JOIN LATERAL regexp_split_to_table(
+        COALESCE(entry.genre, ''), ','
+      ) AS selected_genre(raw_name)
+      JOIN public.genres AS genre
+        ON LOWER(genre.name) = LOWER(BTRIM(selected_genre.raw_name))
+      WHERE entry.user_id = $1
+        AND entry.category IN ('movie', 'series')
+        AND entry.rating >= 4
+      GROUP BY genre.id, genre.name
+      ORDER BY positive_count DESC, genre.name ASC
+      LIMIT 3
+    `,
+    [userId],
+  );
+
+  return result.rows.map((row) => row.name);
+}
+
+function combinePreferredGenres(onboardingGenres, libraryGenres) {
+  const result = [...onboardingGenres];
+  const seen = new Set(result.map((name) => name.toLowerCase()));
+
+  for (const genre of libraryGenres) {
+    const key = genre.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(genre);
+    }
+  }
+
+  return result;
+}
+
 // Media Catalog
 
 router.get("/catalog", requireAuth, async (req, res) => {
@@ -408,7 +450,12 @@ router.post("/recommend", requireAuth, async (req, res) => {
       [req.userId],
     );
 
-    const preferredGenres = preferencesResult.rows.map((row) => row.name);
+    const onboardingGenres = preferencesResult.rows.map((row) => row.name);
+    const libraryGenres = await loadLibraryPreferredGenres(req.userId);
+    const preferredGenres = combinePreferredGenres(
+      onboardingGenres,
+      libraryGenres,
+    );
     const catalog = await loadCompassCatalog();
 
     // Personal Feedback
