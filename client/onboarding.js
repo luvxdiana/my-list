@@ -362,6 +362,11 @@ saveProfileButton.addEventListener("click", async () => {
     showSaveStatus(onboardingT("savedNotice"));
 
     console.log("MyList Compass: profile saved.", data.preferences);
+
+    // Continue to My List after confirmed save
+    window.setTimeout(() => {
+      window.location.replace("/dashboard.html?category=anime");
+    }, 900);
   } catch (error) {
     console.error("Onboarding save error:", error);
 
