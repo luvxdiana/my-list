@@ -1,0 +1,122 @@
+/* TMDB Search */
+.tmdb-library {
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  border: 1px solid #b888df;
+  border-radius: 14px;
+  background: rgba(23, 20, 64, 0.2);
+}
+.tmdb-library[hidden] {
+  display: none;
+}
+.tmdb-library-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 9px;
+  color: #f0d2ff;
+}
+.tmdb-library-search-row {
+  display: flex;
+  gap: 9px;
+}
+.tmdb-library-search-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #ba94dc;
+  border-radius: 9px;
+  padding: 11px;
+  color: white;
+  background: #363e7c;
+  font-size: 15px;
+}
+.tmdb-library-search-row input::placeholder {
+  color: #dbd0e9;
+}
+.tmdb-library-search-row button {
+  border: none;
+  border-radius: 9px;
+  background: #b57bd6;
+  color: white;
+  font-weight: 700;
+  padding: 0 15px;
+  cursor: pointer;
+}
+.tmdb-library-search-row button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.tmdb-library-message {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #f4dffe;
+  min-height: 0;
+}
+.tmdb-library-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 9px;
+  margin-top: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.tmdb-library-results:empty {
+  display: none;
+}
+.tmdb-library-result {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid #b888df;
+  border-radius: 10px;
+  background: #5e6499;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.tmdb-library-result:hover,
+.tmdb-library-result:focus-visible {
+  outline: 2px solid #d8aaf7;
+}
+.tmdb-library-result img {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.tmdb-library-result .tmdb-empty-image {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 2/3;
+  border-radius: 6px;
+  background: #424b89;
+  font-size: 12px;
+  text-align: center;
+}
+.tmdb-library-result-name {
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.tmdb-library-result-year {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.tmdb-library-credit {
+  margin: 9px 0 0;
+  font-size: 11px;
+  opacity: 0.8;
+}
+@media (max-width: 520px) {
+  .tmdb-library {
+    padding: 12px;
+  }
+  .tmdb-library-search-row {
+    flex-direction: column;
+  }
+  .tmdb-library-search-row button {
+    min-height: 40px;
+  }
+}

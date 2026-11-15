@@ -13,8 +13,10 @@
     />
     <link href="dashboard.css" rel="stylesheet" />
     <link href="compass.css" rel="stylesheet" />
+    <link href="tmdb-library.css" rel="stylesheet" />
     <script defer="" src="i18n.js"></script>
     <script defer="" src="dashboard.js"></script>
+    <script defer="" src="tmdb-library.js"></script>
     <script defer="" src="compass.js"></script>
   </head>
   <body>
@@ -489,6 +491,45 @@
       </button>
       <div class="entry-dialog-scroll">
         <form id="entry-form">
+          <!-- TMDB search for films, series and anime -->
+          <section
+            class="tmdb-library"
+            id="tmdb-library"
+            aria-label="TMDB search"
+            hidden
+          >
+            <label
+              class="tmdb-library-label"
+              for="tmdb-library-query"
+              id="tmdb-library-label"
+              >Знайти у TMDB</label
+            >
+            <div class="tmdb-library-search-row">
+              <input
+                id="tmdb-library-query"
+                type="search"
+                autocomplete="off"
+                maxlength="100"
+                placeholder="Назва фільму, серіалу або аніме..."
+              />
+              <button id="tmdb-library-search" type="button">ЗНАЙТИ</button>
+            </div>
+            <p
+              class="tmdb-library-message"
+              id="tmdb-library-message"
+              role="status"
+              aria-live="polite"
+            ></p>
+            <div
+              class="tmdb-library-results"
+              id="tmdb-library-results"
+              role="group"
+              aria-label="TMDB results"
+            ></div>
+            <p class="tmdb-library-credit" id="tmdb-library-credit">
+              Дані: TMDB. Цей застосунок не схвалений та не сертифікований TMDB.
+            </p>
+          </section>
           <div class="entry-top">
             <!-- Photo -->
             <div class="entry-photo-box">
