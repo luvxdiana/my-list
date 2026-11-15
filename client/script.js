@@ -1,4 +1,3 @@
-
 const { t, translateServerError } = window.MyListI18n;
 
 const loginSection = document.getElementById("login-section");
@@ -13,116 +12,144 @@ const registerMessage = document.getElementById("register-message");
 // SWITCH BETWEEN LOGIN AND REGISTER
 
 function showSection(section) {
-    loginSection.hidden = section !== "login";
-    registerSection.hidden = section !== "register";
+  loginSection.hidden = section !== "login";
+  registerSection.hidden = section !== "register";
 
-    loginMessage.textContent = "";
-    registerMessage.textContent = "";
+  loginMessage.textContent = "";
+  registerMessage.textContent = "";
 }
 
 document.getElementById("show-register").addEventListener("click", () => {
-    showSection("register");
+  showSection("register");
 });
 
 document.getElementById("show-login").addEventListener("click", () => {
-    showSection("login");
+  showSection("login");
 });
 
 // DISPLAY MESSAGES
 
 function showMessage(element, message, success = false) {
-    element.textContent = message;
-    element.style.color = success ? "#FFFFF6" : "#FFE0E0";
+  element.textContent = message;
+  element.style.color = success ? "#FFFFF6" : "#FFE0E0";
 }
 
 // LOGIN
 
 loginForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
+  event.preventDefault();
 
-    const formData = new FormData(loginForm);
+  const formData = new FormData(loginForm);
 
-    const email = formData.get("email");
-    const password = formData.get("password");
+  const email = formData.get("email");
+  const password = formData.get("password");
 
-    try {
-        const response = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "same-origin",
-            body: JSON.stringify({ email, password })
-        });
+  try {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({ email, password }),
+    });
 
-        const data = await response.json();
+    const data = await response.json();
 
-        if (!response.ok) {
-            showMessage(loginMessage, translateServerError(data.message, "auth.loginFailed"));
-            return;
-        }
-
-        showMessage(
-            loginMessage,
-            t("auth.welcome", { username: data.user.username }),
-            true
-        );
-
-        loginForm.reset();
-        window.location.href = "/dashboard.html?category=anime";
-
-    } catch (error) {
-        showMessage(loginMessage, t("auth.noServer"));
-        console.error(error);
+    if (!response.ok) {
+      showMessage(
+        loginMessage,
+        translateServerError(data.message, "auth.loginFailed"),
+      );
+      return;
     }
+
+    showMessage(
+      loginMessage,
+      t("auth.welcome", { username: data.user.username }),
+      true,
+    );
+
+    // Onboarding
+    const optionsResponse = await fetch("/api/compass/onboarding/options", {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+
+    if (!optionsResponse.ok) {
+      showMessage(
+        loginMessage,
+        "Не вдалося перевірити налаштування Compass. Спробуй увійти ще раз.",
+      );
+      return;
+    }
+
+    const options = await optionsResponse.json();
+    if (
+      !options.preferences ||
+      typeof options.preferences.onboarding_completed !== "boolean"
+    ) {
+      showMessage(
+        loginMessage,
+        "Некоректна відповідь налаштувань Compass. Спробуй ще раз.",
+      );
+      return;
+    }
+
+    loginForm.reset();
+    window.location.href = options.preferences.onboarding_completed
+      ? "/dashboard.html?category=anime"
+      : "/onboarding.html";
+  } catch (error) {
+    showMessage(loginMessage, t("auth.noServer"));
+    console.error(error);
+  }
 });
 
 // REGISTER
 
 registerForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
+  event.preventDefault();
 
-    const formData = new FormData(registerForm);
+  const formData = new FormData(registerForm);
 
-    const username = formData.get("username");
-    const email = formData.get("email");
-    const password = formData.get("password");
-    const confirmPassword = formData.get("confirmPassword");
+  const username = formData.get("username");
+  const email = formData.get("email");
+  const password = formData.get("password");
+  const confirmPassword = formData.get("confirmPassword");
 
-    if (password !== confirmPassword) {
-        showMessage(registerMessage, t("auth.passwordMismatch"));
-        return;
+  if (password !== confirmPassword) {
+    showMessage(registerMessage, t("auth.passwordMismatch"));
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showMessage(
+        registerMessage,
+        translateServerError(data.message, "auth.registerFailed"),
+      );
+      return;
     }
 
-    try {
-        const response = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username, email, password })
-        });
+    registerForm.reset();
+    showSection("login");
 
-        const data = await response.json();
+    loginForm.elements.email.value = email;
 
-        if (!response.ok) {
-            showMessage(registerMessage, translateServerError(data.message, "auth.registerFailed"));
-            return;
-        }
-
-        registerForm.reset();
-        showSection("login");
-
-        loginForm.elements.email.value = email;
-
-        showMessage(
-            loginMessage,
-            t("auth.created"),
-            true
-        );
-
-    } catch (error) {
-        showMessage(registerMessage, t("auth.noServer"));
-        console.error(error);
-    }
+    showMessage(loginMessage, t("auth.created"), true);
+  } catch (error) {
+    showMessage(registerMessage, t("auth.noServer"));
+    console.error(error);
+  }
 });
