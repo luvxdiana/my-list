@@ -650,4 +650,328 @@ router.post(
   },
 );
 
+// Annotation Options
+
+router.get(
+  "/annotation-options",
+  requireAuth,
+  requireCatalogAdmin,
+  async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT id::text, code, name FROM public.emotions ORDER BY id`,
+      );
+      return res.json({
+        emotions: result.rows,
+        annotation_status: "provisional",
+        read_only: true,
+      });
+    } catch (error) {
+      console.error("Annotation options error:", error);
+      return res
+        .status(500)
+        .json({ message: "Unable to load annotation options." });
+    }
+  },
+);
+
+// Annotation Preview
+
+router.get(
+  "/annotations/:mediaId",
+  requireAuth,
+  requireCatalogAdmin,
+  async (req, res) => {
+    const { mediaId } = req.params;
+    if (!/^[1-9]\d*$/.test(mediaId) || !Number.isSafeInteger(Number(mediaId))) {
+      return res.status(400).json({ message: "Invalid media ID." });
+    }
+
+    try {
+      const mediaResult = await pool.query(
+        `SELECT id::text, title, category, tmdb_id FROM public.media_catalog WHERE id = $1`,
+        [mediaId],
+      );
+      if (!mediaResult.rows.length) {
+        return res.status(404).json({ message: "Media not found." });
+      }
+      const labels = await pool.query(
+        `SELECT e.code, e.name, me.annotation_source, me.annotation_status
+       FROM public.media_emotions AS me
+       JOIN public.emotions AS e ON e.id = me.emotion_id
+       WHERE me.media_id = $1 ORDER BY e.id`,
+        [mediaId],
+      );
+      const canEdit =
+        mediaResult.rows[0].tmdb_id !== null &&
+        labels.rows.every(
+          (row) =>
+            row.annotation_source === "manual_admin" &&
+            row.annotation_status === "provisional",
+        );
+      return res.json({
+        media: mediaResult.rows[0],
+        emotions: labels.rows,
+        can_edit: canEdit,
+        warning:
+          "Provisional labels enter Compass recommendations. Do not assign emotions without a defensible annotation basis.",
+      });
+    } catch (error) {
+      console.error("Annotation preview error:", error);
+      return res
+        .status(500)
+        .json({ message: "Unable to load media annotations." });
+    }
+  },
+);
+
+// Save Provisional Annotations
+
+router.put(
+  "/annotations/:mediaId",
+  requireAuth,
+  requireCatalogAdmin,
+  async (req, res) => {
+    const { mediaId } = req.params;
+    const { emotion_codes: emotionCodes, confirm_annotation: confirmation } =
+      req.body || {};
+    if (!/^[1-9]\d*$/.test(mediaId) || !Number.isSafeInteger(Number(mediaId))) {
+      return res
+        .status(400)
+        .json({ message: "Invalid media ID.", saved: false });
+    }
+    if (
+      !Array.isArray(emotionCodes) ||
+      emotionCodes.length < 1 ||
+      emotionCodes.length > 6 ||
+      emotionCodes.some(
+        (code) => typeof code !== "string" || !/^[a-z_]{1,30}$/.test(code),
+      ) ||
+      new Set(emotionCodes).size !== emotionCodes.length
+    ) {
+      return res.status(400).json({
+        message: "Provide 1–6 distinct valid emotion codes.",
+        saved: false,
+      });
+    }
+    if (confirmation !== "ANNOTATE_PROVISIONAL") {
+      return res.status(400).json({
+        message: "Explicit provisional annotation confirmation required.",
+        saved: false,
+      });
+    }
+
+    let client;
+    try {
+      client = await pool.connect();
+      await client.query("BEGIN");
+
+      const admin = await client.query(
+        `SELECT is_admin FROM public.users WHERE id = $1 FOR SHARE`,
+        [req.userId],
+      );
+      if (admin.rows[0]?.is_admin !== true) {
+        throw httpError(403, "Administrator access required.");
+      }
+
+      const media = await client.query(
+        `SELECT id, title, category, tmdb_id FROM public.media_catalog WHERE id = $1 FOR UPDATE`,
+        [mediaId],
+      );
+      if (!media.rows.length) throw httpError(404, "Media not found.");
+      if (media.rows[0].tmdb_id === null) {
+        throw httpError(
+          409,
+          "Only TMDB-linked imported candidates can be annotated here.",
+        );
+      }
+
+      const existing = await client.query(
+        `SELECT annotation_source, annotation_status
+       FROM public.media_emotions WHERE media_id = $1 FOR UPDATE`,
+        [mediaId],
+      );
+      if (
+        existing.rows.some(
+          (row) =>
+            row.annotation_source !== "manual_admin" ||
+            row.annotation_status !== "provisional",
+        )
+      ) {
+        throw httpError(
+          409,
+          "Existing research or reviewed labels cannot be edited here.",
+        );
+      }
+
+      const valid = await client.query(
+        `SELECT id, code FROM public.emotions WHERE code = ANY($1::text[]) ORDER BY id`,
+        [emotionCodes],
+      );
+      if (valid.rows.length !== emotionCodes.length) {
+        throw httpError(400, "Unknown emotion code.");
+      }
+
+      await client.query(
+        `DELETE FROM public.media_emotions WHERE media_id = $1`,
+        [mediaId],
+      );
+      const inserted = await client.query(
+        `INSERT INTO public.media_emotions
+          (media_id, emotion_id, annotation_source, annotation_status)
+       SELECT $1::bigint, id, 'manual_admin', 'provisional'
+       FROM public.emotions WHERE code = ANY($2::text[])
+       RETURNING emotion_id`,
+        [mediaId, emotionCodes],
+      );
+      if (inserted.rowCount !== emotionCodes.length) {
+        throw httpError(500, "Annotation count mismatch; rolling back.");
+      }
+
+      await client.query("COMMIT");
+      return res.status(200).json({
+        saved: true,
+        media: { id: String(media.rows[0].id), title: media.rows[0].title },
+        emotion_codes: valid.rows.map((row) => row.code),
+        annotation_source: "manual_admin",
+        annotation_status: "provisional",
+        disclaimer:
+          "Labels are preliminary, not independently verified, and will enter Compass recommendations.",
+      });
+    } catch (error) {
+      if (client) {
+        try {
+          await client.query("ROLLBACK");
+        } catch (rollbackError) {
+          console.error("Annotation rollback error:", rollbackError);
+        }
+      }
+      if (error.status)
+        return res
+          .status(error.status)
+          .json({ saved: false, message: error.message });
+      console.error("Annotation save error:", error);
+      return res
+        .status(500)
+        .json({ saved: false, message: "Unable to save annotations." });
+    } finally {
+      client?.release();
+    }
+  },
+);
+
+// Delete Provisional Annotations
+
+router.delete(
+  "/annotations/:mediaId",
+  requireAuth,
+  requireCatalogAdmin,
+  async (req, res) => {
+    const { mediaId } = req.params;
+    const { confirm_delete: confirmation } = req.body || {};
+
+    if (!/^[1-9]\d*$/.test(mediaId) || !Number.isSafeInteger(Number(mediaId))) {
+      return res
+        .status(400)
+        .json({ saved: false, message: "Invalid media ID." });
+    }
+    if (confirmation !== "DELETE_PROVISIONAL") {
+      return res.status(400).json({
+        saved: false,
+        message:
+          "Explicit provisional annotation deletion confirmation required.",
+      });
+    }
+
+    let client;
+    try {
+      client = await pool.connect();
+      await client.query("BEGIN");
+
+      const admin = await client.query(
+        `SELECT is_admin FROM public.users WHERE id = $1 FOR SHARE`,
+        [req.userId],
+      );
+      if (admin.rows[0]?.is_admin !== true) {
+        throw httpError(403, "Administrator access required.");
+      }
+
+      const media = await client.query(
+        `SELECT id, title, tmdb_id FROM public.media_catalog WHERE id = $1 FOR UPDATE`,
+        [mediaId],
+      );
+      if (!media.rows.length) throw httpError(404, "Media not found.");
+      if (media.rows[0].tmdb_id === null) {
+        throw httpError(409, "Only TMDB-linked media can be cleared here.");
+      }
+
+      const existing = await client.query(
+        `SELECT annotation_source, annotation_status
+           FROM public.media_emotions
+          WHERE media_id = $1
+          FOR UPDATE`,
+        [mediaId],
+      );
+      if (existing.rows.length === 0) {
+        throw httpError(409, "There are no annotations to clear.");
+      }
+      if (
+        existing.rows.some(
+          (row) =>
+            row.annotation_source !== "manual_admin" ||
+            row.annotation_status !== "provisional",
+        )
+      ) {
+        throw httpError(
+          409,
+          "Research or reviewed annotations cannot be deleted here.",
+        );
+      }
+
+      const deleted = await client.query(
+        `DELETE FROM public.media_emotions
+          WHERE media_id = $1
+            AND annotation_source = 'manual_admin'
+            AND annotation_status = 'provisional'
+          RETURNING emotion_id`,
+        [mediaId],
+      );
+      if (deleted.rowCount !== existing.rowCount) {
+        throw httpError(
+          409,
+          "Annotations changed during deletion; rolled back.",
+        );
+      }
+
+      await client.query("COMMIT");
+      return res.status(200).json({
+        deleted: true,
+        media: { id: String(media.rows[0].id), title: media.rows[0].title },
+        removed_labels: deleted.rowCount,
+        note: "This media is no longer eligible for Compass ranking unless other annotations are added.",
+      });
+    } catch (error) {
+      if (client) {
+        try {
+          await client.query("ROLLBACK");
+        } catch (rollbackError) {
+          console.error("Annotation delete rollback error:", rollbackError);
+        }
+      }
+      if (error.status) {
+        return res
+          .status(error.status)
+          .json({ deleted: false, message: error.message });
+      }
+      console.error("Annotation delete error:", error);
+      return res.status(500).json({
+        deleted: false,
+        message: "Unable to delete annotations.",
+      });
+    } finally {
+      client?.release();
+    }
+  },
+);
+
 module.exports = router;

@@ -111,6 +111,106 @@
             Лише попередній перегляд. Зміни до PostgreSQL не вноситимуться.
           </p>
         </section>
+        <!-- Emotional Annotation -->
+        <section
+          class="admin-card"
+          id="annotation-section"
+          aria-labelledby="annotation-heading"
+        >
+          <div class="annotation-heading-row">
+            <div>
+              <span class="annotation-kicker">MYLIST COMPASS · RESEARCH</span>
+              <h2 id="annotation-heading">
+                Емоційна розмітка / Emotional annotation
+              </h2>
+              <p class="section-description">
+                Додавай попередні емоційні мітки лише після обґрунтованого
+                аналізу твору. Первинні дослідницькі мітки захищені.
+              </p>
+            </div>
+            <span class="annotation-status-tag">PROVISIONAL ONLY</span>
+          </div>
+          <form id="annotation-load-form" class="annotation-lookup">
+            <label for="annotation-media-id">MyList media ID</label>
+            <div class="annotation-lookup-row">
+              <input
+                id="annotation-media-id"
+                type="number"
+                min="1"
+                step="1"
+                required
+                placeholder="51"
+                inputmode="numeric"
+              />
+              <button
+                id="annotation-load-button"
+                type="submit"
+                class="secondary-button"
+              >
+                Завантажити / Load
+              </button>
+            </div>
+          </form>
+          <p
+            id="annotation-load-status"
+            class="helper-text"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <div id="annotation-editor" hidden>
+            <div class="annotation-media-card">
+              <strong id="annotation-media-title"></strong>
+              <p id="annotation-media-meta"></p>
+            </div>
+            <div
+              id="annotation-locked-notice"
+              class="annotation-warning"
+              hidden
+            ></div>
+            <form id="annotation-save-form" hidden>
+              <h3>Емоції / Emotions</h3>
+              <p class="section-description">
+                Обери від 1 до 6 емоцій, які можна обґрунтувати. Вибір не є
+                незалежною валідацією.
+              </p>
+              <div
+                id="annotation-emotion-options"
+                class="annotation-emotions"
+                role="group"
+                aria-label="Emotions"
+              ></div>
+              <div class="annotation-fixed-meta">
+                <div><span>Source</span><strong>manual_admin</strong></div>
+                <div><span>Status</span><strong>provisional</strong></div>
+              </div>
+              <div class="annotation-warning" role="note">
+                <strong>Увага / Warning</strong>
+                <p>
+                  Після збереження ці попередні мітки одразу дозволять твору
+                  брати участь у рекомендаціях Compass v1.3. Не вважай їх
+                  незалежно перевіреними.
+                </p>
+              </div>
+              <label class="annotation-confirm">
+                <input id="annotation-confirm" type="checkbox" required />
+                <span
+                  >Підтверджую, що маю обґрунтування вибраних емоцій і розумію
+                  їхній вплив на рекомендації. / I confirm these labels have a
+                  defensible basis.</span
+                >
+              </label>
+              <button id="annotation-save-button" type="submit" disabled>
+                Зберегти попередню розмітку / Save provisional labels
+              </button>
+              <p
+                id="annotation-save-status"
+                class="helper-text"
+                role="status"
+                aria-live="polite"
+              ></p>
+            </form>
+          </div>
+        </section>
       </div>
     </main>
   </body>

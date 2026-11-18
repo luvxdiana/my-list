@@ -153,6 +153,7 @@ async function checkAdministratorAccess() {
     );
 
     adminPanel.hidden = false;
+    loadAnnotationOptions();
   } catch (error) {
     accessStatus.textContent = error.message;
     accessStatus.classList.add("status-error");
@@ -514,6 +515,11 @@ async function importSelectedMedia() {
       `Successfully imported ${media.title}. ` +
       `MyList ID: ${importedId}. ` +
       `No emotional assessments were created.`;
+
+    annotationMediaId.value = String(importedId);
+    annotationLoadStatus.textContent =
+      "Imported successfully. Load this ID below when you have a defensible annotation basis.";
+    annotationSection.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     selectedMedia = null;
     importPanel.hidden = true;
@@ -552,3 +558,197 @@ importButton.addEventListener("click", importSelectedMedia);
 // Initialization
 
 checkAdministratorAccess();
+
+// Emotional Annotation
+
+const annotationSection = document.getElementById("annotation-section");
+const annotationLoadForm = document.getElementById("annotation-load-form");
+const annotationMediaId = document.getElementById("annotation-media-id");
+const annotationLoadButton = document.getElementById("annotation-load-button");
+const annotationLoadStatus = document.getElementById("annotation-load-status");
+const annotationEditor = document.getElementById("annotation-editor");
+const annotationMediaTitle = document.getElementById("annotation-media-title");
+const annotationMediaMeta = document.getElementById("annotation-media-meta");
+const annotationLockedNotice = document.getElementById(
+  "annotation-locked-notice",
+);
+const annotationSaveForm = document.getElementById("annotation-save-form");
+const annotationEmotionOptions = document.getElementById(
+  "annotation-emotion-options",
+);
+const annotationConfirm = document.getElementById("annotation-confirm");
+const annotationSaveButton = document.getElementById("annotation-save-button");
+const annotationSaveStatus = document.getElementById("annotation-save-status");
+
+let annotationOptions = [];
+let annotationSelected = null;
+let annotationLoading = false;
+let annotationSaving = false;
+let annotationRequestVersion = 0;
+
+async function loadAnnotationOptions() {
+  try {
+    const data = await getApiData("/api/catalog-admin/annotation-options");
+    if (
+      !Array.isArray(data.emotions) ||
+      data.emotions.length !== 6 ||
+      data.emotions.some(
+        (emotion) =>
+          typeof emotion.code !== "string" || typeof emotion.name !== "string",
+      )
+    ) {
+      throw new Error("Unexpected emotion options response.");
+    }
+    annotationOptions = data.emotions;
+  } catch (error) {
+    annotationLoadStatus.textContent = `Emotion options unavailable: ${error.message}`;
+  }
+}
+
+function updateAnnotationSaveButton() {
+  const chosen = annotationEmotionOptions.querySelectorAll(
+    'input[type="checkbox"]:checked',
+  ).length;
+  annotationSaveButton.disabled =
+    annotationSaving ||
+    annotationLoading ||
+    !annotationSelected?.canEdit ||
+    !annotationConfirm.checked ||
+    chosen < 1 ||
+    chosen > 6;
+}
+
+function renderAnnotationOptions(selectedCodes) {
+  annotationEmotionOptions.replaceChildren();
+  for (const emotion of annotationOptions) {
+    const label = document.createElement("label");
+    label.className = "annotation-emotion";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = emotion.code;
+    input.checked = selectedCodes.has(emotion.code);
+    input.addEventListener("change", updateAnnotationSaveButton);
+    const caption = document.createElement("span");
+    caption.textContent = `${emotion.name} · ${emotion.code}`;
+    label.append(input, caption);
+    annotationEmotionOptions.append(label);
+  }
+}
+
+async function loadMediaAnnotations(mediaId) {
+  const requestVersion = ++annotationRequestVersion;
+  annotationLoading = true;
+  annotationSelected = null;
+  annotationEditor.hidden = true;
+  annotationLoadButton.disabled = true;
+  annotationLoadStatus.textContent = "Завантаження / Loading…";
+
+  try {
+    if (!annotationOptions.length) await loadAnnotationOptions();
+    if (!annotationOptions.length)
+      throw new Error("Emotion dictionary is unavailable.");
+
+    const data = await getApiData(
+      `/api/catalog-admin/annotations/${encodeURIComponent(mediaId)}`,
+    );
+    if (requestVersion !== annotationRequestVersion) return;
+    if (!data.media || !Array.isArray(data.emotions)) {
+      throw new Error("Unexpected annotation response.");
+    }
+
+    annotationSelected = {
+      id: String(data.media.id),
+      canEdit: data.can_edit === true,
+    };
+    annotationMediaTitle.textContent = data.media.title;
+    annotationMediaMeta.textContent = `${data.media.category} · MyList ID ${data.media.id} · TMDB ${data.media.tmdb_id ?? "—"}`;
+    annotationConfirm.checked = false;
+    annotationSaveStatus.textContent = "";
+    annotationEditor.hidden = false;
+
+    if (!data.can_edit) {
+      annotationLockedNotice.hidden = false;
+      annotationLockedNotice.textContent =
+        "Ця розмітка захищена: вихідні дослідницькі або перевірені мітки не можна змінювати тут. / These annotations are protected.";
+      annotationSaveForm.hidden = true;
+    } else {
+      annotationLockedNotice.hidden = true;
+      annotationSaveForm.hidden = false;
+      renderAnnotationOptions(
+        new Set(data.emotions.map((emotion) => emotion.code)),
+      );
+    }
+    annotationLoadStatus.textContent = "Дані завантажено / Loaded.";
+  } catch (error) {
+    if (requestVersion === annotationRequestVersion) {
+      annotationLoadStatus.textContent = error.message;
+    }
+  } finally {
+    if (requestVersion === annotationRequestVersion) {
+      annotationLoading = false;
+      annotationLoadButton.disabled = false;
+      updateAnnotationSaveButton();
+    }
+  }
+}
+
+annotationLoadForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const id = annotationMediaId.value.trim();
+  if (!/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id))) {
+    annotationLoadStatus.textContent = "Введи коректний ID / Enter a valid ID.";
+    return;
+  }
+  loadMediaAnnotations(id);
+});
+
+annotationConfirm.addEventListener("change", updateAnnotationSaveButton);
+
+annotationSaveForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (
+    annotationSaving ||
+    !annotationSelected?.canEdit ||
+    !annotationConfirm.checked
+  )
+    return;
+  const emotionCodes = Array.from(
+    annotationEmotionOptions.querySelectorAll('input[type="checkbox"]:checked'),
+    (input) => input.value,
+  );
+  if (!emotionCodes.length || emotionCodes.length > 6) return;
+
+  const mediaId = annotationSelected.id;
+  annotationSaving = true;
+  annotationLoadButton.disabled = true;
+  updateAnnotationSaveButton();
+  annotationSaveStatus.textContent = "Збереження / Saving…";
+
+  try {
+    const response = await fetch(
+      `/api/catalog-admin/annotations/${encodeURIComponent(mediaId)}`,
+      {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          emotion_codes: emotionCodes,
+          confirm_annotation: "ANNOTATE_PROVISIONAL",
+        }),
+      },
+    );
+    const data = await response.json().catch(() => null);
+    if (!response.ok || data?.saved !== true) {
+      throw new Error(data?.message || `HTTP ${response.status}`);
+    }
+    annotationSaveStatus.textContent =
+      "Попередні мітки збережено. Твір тепер може брати участь у рекомендаціях Compass. / Saved: eligible for recommendations.";
+    annotationConfirm.checked = false;
+  } catch (error) {
+    annotationSaveStatus.textContent = `Помилка / Error: ${error.message}`;
+  } finally {
+    annotationSaving = false;
+    annotationLoadButton.disabled = false;
+    updateAnnotationSaveButton();
+  }
+});
