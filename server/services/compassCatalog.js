@@ -27,6 +27,12 @@ async function loadCompassCatalog() {
       ) AS emotions
     FROM public.media_catalog AS media
     WHERE media.category IN ('movie', 'series')
+      AND EXISTS (
+        SELECT 1
+        FROM public.media_emotions AS annotated
+        WHERE annotated.media_id = media.id
+          AND annotated.annotation_status IN ('provisional', 'reviewed')
+      )
     ORDER BY media.id;
   `;
 

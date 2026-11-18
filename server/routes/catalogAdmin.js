@@ -213,6 +213,99 @@ router.get("/check", requireAuth, requireCatalogAdmin, (req, res) => {
   });
 });
 
+// Preview TMDB Candidate (Read Only)
+
+router.get("/preview", requireAuth, requireCatalogAdmin, async (req, res) => {
+  const { type, tmdb_id: rawTmdbId } = req.query;
+  const tmdbId = Number(rawTmdbId);
+
+  if (
+    !["movie", "series"].includes(type) ||
+    typeof rawTmdbId !== "string" ||
+    !/^[1-9]\d*$/.test(rawTmdbId) ||
+    !Number.isSafeInteger(tmdbId) ||
+    tmdbId > 2147483647
+  ) {
+    return res.status(400).json({
+      message: "Invalid media type or TMDB ID.",
+      saved: false,
+    });
+  }
+
+  try {
+    const media = await getTmdbDetails(type, tmdbId);
+    const existingResult = await pool.query(
+      `SELECT id, title, release_year, tmdb_id
+         FROM public.media_catalog
+        WHERE category = $1
+        ORDER BY id
+        LIMIT $2`,
+      [type, MAX_CATALOG_ROWS + 1],
+    );
+
+    if (existingResult.rows.length > MAX_CATALOG_ROWS) {
+      throw httpError(409, "Catalog is too large for safe title matching.");
+    }
+
+    const possibleDuplicates = existingResult.rows
+      .filter(
+        (row) =>
+          row.tmdb_id === tmdbId ||
+          media.aliases.has(normalizeTitle(row.title)),
+      )
+      .slice(0, 10)
+      .map((row) => ({
+        media_id: row.id,
+        title: row.title,
+        release_year: row.release_year,
+        tmdb_id: row.tmdb_id,
+      }));
+
+    const genreResult = await pool.query(
+      `SELECT name FROM public.genres WHERE name = ANY($1::text[])`,
+      [media.genreNames],
+    );
+    const availableGenres = new Set(genreResult.rows.map((row) => row.name));
+    const missingGenres = media.genreNames.filter(
+      (genre) => !availableGenres.has(genre),
+    );
+
+    return res.status(200).json({
+      source: "TMDB",
+      saved: false,
+      media: {
+        tmdb_id: tmdbId,
+        type,
+        title: media.title,
+        release_year: media.year,
+        duration_minutes: media.duration,
+        description: media.description,
+        genres: media.genreNames,
+      },
+      duplicate_candidates: possibleDuplicates,
+      missing_genres: missingGenres,
+      can_import: possibleDuplicates.length === 0 && missingGenres.length === 0,
+      emotions_created: false,
+      note: "TMDB does not provide verified Compass emotional annotations. New candidates will not be ranked until annotated.",
+    });
+  } catch (error) {
+    if (error.name === "AbortError" || error.name === "TimeoutError") {
+      return res
+        .status(504)
+        .json({ message: "TMDB request timed out.", saved: false });
+    }
+    if (error.status) {
+      return res
+        .status(error.status)
+        .json({ message: error.message, saved: false });
+    }
+    console.error("Catalog preview error:", error);
+    return res
+      .status(500)
+      .json({ message: "Catalog preview failed.", saved: false });
+  }
+});
+
 // Import New Media
 
 router.post(
