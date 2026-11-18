@@ -1306,6 +1306,82 @@
     "final.text.213": "Unable to record acknowledgement. Please try again.",
   });
 
+  // Compass Watch Reminder
+  Object.assign(translations.uk, {
+    "compass.watch.button": "Де подивитися?",
+    "compass.watch.region": "Країна: ",
+    "compass.watch.norway": "Норвегія",
+    "compass.watch.ukraine": "Україна",
+    "compass.watch.loading": "Завантажуємо доступні платформи…",
+    "compass.watch.loadError": "Не вдалося завантажити платформи.",
+    "compass.watch.subscription": "За підпискою",
+    "compass.watch.free": "Безкоштовно",
+    "compass.watch.ads": "З рекламою",
+    "compass.watch.rent": "Оренда",
+    "compass.watch.buy": "Купівля",
+    "compass.watch.none":
+      "Для цієї країни TMDB не має підтверджених варіантів перегляду.",
+    "compass.watch.open": "Відкрити варіанти перегляду на TMDB ↗",
+    "compass.watch.attribution":
+      "Дані про доступність: JustWatch через TMDB. Список може змінюватися. Посилання веде на TMDB, не безпосередньо до відео.",
+    "compass.watch.genericError": "Помилка завантаження.",
+    "compass.reminder.question": "Ти вже переглянув(-ла) «{title}»?",
+    "compass.reminder.description":
+      "Ти відкривав(-ла) варіанти перегляду. Якщо вже подивився(-лася), оціни точність рекомендації Compass.",
+    "compass.reminder.yes": "Так, оцінити",
+    "compass.reminder.later": "Ще не дивився(-лася)",
+    "compass.reminder.dismiss": "Не нагадувати",
+    "compass.reminder.watched": "Переглянуто",
+    "compass.reminder.fit": "Наскільки точно Compass підібрав твір? ",
+    "compass.reminder.achieved": "Чи відчув(-ла) ти бажану емоцію? ",
+    "compass.reminder.unspecified": "Не вказано",
+    "compass.reminder.answerYes": "Так",
+    "compass.reminder.answerNo": "Ні",
+    "compass.reminder.confirm": "Підтвердити перегляд",
+    "compass.reminder.saving": "Зберігаємо…",
+    "compass.reminder.saved":
+      "Додано до My List (Completed). Оцінку фільму, думку та обкладинку можна додати в бібліотеці.",
+    "compass.reminder.saveError": "Не вдалося зберегти перегляд.",
+    "compass.reminder.genreLabel": "Жанри: {genres}",
+  });
+  Object.assign(translations.en, {
+    "compass.watch.button": "Where to watch?",
+    "compass.watch.region": "Country: ",
+    "compass.watch.norway": "Norway",
+    "compass.watch.ukraine": "Ukraine",
+    "compass.watch.loading": "Loading available services…",
+    "compass.watch.loadError": "Could not load viewing services.",
+    "compass.watch.subscription": "Subscription",
+    "compass.watch.free": "Free",
+    "compass.watch.ads": "With ads",
+    "compass.watch.rent": "Rent",
+    "compass.watch.buy": "Buy",
+    "compass.watch.none":
+      "TMDB has no confirmed viewing options for this country.",
+    "compass.watch.open": "Open viewing options on TMDB ↗",
+    "compass.watch.attribution":
+      "Availability data: JustWatch via TMDB. Services may change. The link opens TMDB, not the video itself.",
+    "compass.watch.genericError": "Unable to load data.",
+    "compass.reminder.question": "Have you watched “{title}”?",
+    "compass.reminder.description":
+      "You opened the viewing options. If you have watched it, rate how well Compass matched your desired emotion.",
+    "compass.reminder.yes": "Yes, rate it",
+    "compass.reminder.later": "Not watched yet",
+    "compass.reminder.dismiss": "Do not remind me",
+    "compass.reminder.watched": "Watched",
+    "compass.reminder.fit": "How accurately did Compass recommend this title? ",
+    "compass.reminder.achieved": "Did you feel the desired emotion? ",
+    "compass.reminder.unspecified": "Not specified",
+    "compass.reminder.answerYes": "Yes",
+    "compass.reminder.answerNo": "No",
+    "compass.reminder.confirm": "Confirm watched",
+    "compass.reminder.saving": "Saving…",
+    "compass.reminder.saved":
+      "Added to My List (Completed). You can add your own rating, review, and cover image in the library.",
+    "compass.reminder.saveError": "Unable to save watched status.",
+    "compass.reminder.genreLabel": "Genres: {genres}",
+  });
+
   function readLanguage() {
     try {
       const value = localStorage.getItem(STORAGE_KEY);

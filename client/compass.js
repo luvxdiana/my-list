@@ -82,6 +82,59 @@ if (compassMascot) {
   }
 }
 
+// Reminder Localization
+
+const norwegianReminderTranslations = {
+  "compass.reminder.question": "Har du sett «{title}»?",
+  "compass.reminder.watched": "Sett",
+  "compass.reminder.description":
+    "Du åpnet visningsalternativene. Hvis du har sett filmen eller serien, kan du vurdere hvor godt Compass traff ønsket følelse.",
+  "compass.reminder.yes": "Ja, vurder",
+  "compass.reminder.later": "Ikke sett ennå",
+  "compass.reminder.dismiss": "Ikke minn meg på det",
+  "compass.reminder.fit": "Hvor godt traff Compass med anbefalingen? ",
+  "compass.reminder.achieved": "Fikk du følelsen du ønsket? ",
+  "compass.reminder.unspecified": "Ikke oppgitt",
+  "compass.reminder.answerYes": "Ja",
+  "compass.reminder.answerNo": "Nei",
+  "compass.reminder.confirm": "Bekreft at du har sett den",
+  "compass.reminder.saving": "Lagrer…",
+  "compass.reminder.saved":
+    "Lagt til i My List (Completed). Du kan legge til egen vurdering, omtale og forsidebilde i biblioteket.",
+  "compass.reminder.saveError": "Kunne ikke lagre visningen.",
+  "compass.reminder.genreLabel": "Sjangre: {genres}",
+  "compass.watch.button": "Hvor kan jeg se den?",
+  "compass.watch.region": "Land: ",
+  "compass.watch.norway": "Norge",
+  "compass.watch.ukraine": "Ukraina",
+  "compass.watch.loading": "Laster tilgjengelige strømmetjenester…",
+  "compass.watch.loadError": "Kunne ikke laste strømmetjenester.",
+  "compass.watch.subscription": "Abonnement",
+  "compass.watch.free": "Gratis",
+  "compass.watch.ads": "Med reklame",
+  "compass.watch.rent": "Leie",
+  "compass.watch.buy": "Kjøp",
+  "compass.watch.none":
+    "TMDB har ingen bekreftede visningsalternativer for dette landet.",
+  "compass.watch.open": "Åpne visningsalternativer på TMDB ↗",
+  "compass.watch.attribution":
+    "Tilgjengelighetsdata: JustWatch via TMDB. Utvalget kan endres. Lenken går til TMDB, ikke direkte til videoen.",
+  "compass.watch.genericError": "Kunne ikke laste data.",
+};
+
+function reminderText(key, parameters = {}) {
+  const language = window.MyListI18n?.getLanguage?.() || "uk";
+  if (language === "no" || language === "nb" || language === "nn") {
+    const template = norwegianReminderTranslations[key];
+    if (template) {
+      return template.replace(/\{(\w+)\}/g, (_, name) =>
+        String(parameters[name] ?? ""),
+      );
+    }
+  }
+  return translateCompass(key, parameters);
+}
+
 // Watch Reminder
 
 const COMPASS_WATCH_INTENTS_KEY = "mylist-compass-watch-intents-v1";
@@ -119,6 +172,13 @@ function rememberWatchInterest(media) {
     tmdb_id: media.tmdb_id,
     category: media.category,
     title: media.title,
+    // Preserve the displayed metadata: the history endpoint omits genres.
+    genres: Array.isArray(media.genres) ? media.genres : [],
+    reasons: Array.isArray(media.reasons) ? media.reasons : [],
+    score: media.score ?? null,
+    position: media.position ?? null,
+    duration_minutes: media.duration_minutes ?? null,
+    release_year: media.release_year ?? null,
     added_at: Date.now(),
   });
   saveWatchIntents(existing);
@@ -158,7 +218,10 @@ async function showPendingWatchReminder(opening) {
     const match = [...pending].reverse().find((intent) => {
       const item = owned.get(String(intent.recommendation_id));
       return (
-        item && item.category === intent.category && item.title === intent.title
+        item &&
+        item.category === intent.category &&
+        item.title === intent.title &&
+        !item.feedback
       );
     });
 
@@ -172,10 +235,11 @@ async function showPendingWatchReminder(opening) {
 
     const media = owned.get(String(match.recommendation_id));
     const title = document.createElement("h3");
-    title.textContent = `Ти вже переглянув(-ла) «${match.title}»?`;
+    title.textContent = reminderText("compass.reminder.question", {
+      title: match.title,
+    });
     const description = document.createElement("p");
-    description.textContent =
-      "Ти відкривав(-ла) варіанти перегляду. Якщо вже подивився(-лася), оціни точність рекомендації Compass.";
+    description.textContent = reminderText("compass.reminder.description");
 
     const actions = document.createElement("div");
     actions.style.cssText =
@@ -188,9 +252,9 @@ async function showPendingWatchReminder(opening) {
         "padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,.5); background: #353775; color: #fff; font: inherit; cursor: pointer;";
       return button;
     }
-    const yes = action("Так, оцінити");
-    const later = action("Ще не дивився(-лася)");
-    const dismiss = action("Не нагадувати");
+    const yes = action(reminderText("compass.reminder.yes"));
+    const later = action(reminderText("compass.reminder.later"));
+    const dismiss = action(reminderText("compass.reminder.dismiss"));
     actions.append(yes, later, dismiss);
     compassPreview.replaceChildren(title, description, actions);
     compassPreview.hidden = false;
@@ -199,8 +263,22 @@ async function showPendingWatchReminder(opening) {
       const reminderMedia = {
         ...media,
         tmdb_id: match.tmdb_id,
-        genres: [],
-        reasons: [],
+        genres:
+          Array.isArray(match.genres) && match.genres.length
+            ? match.genres
+            : Array.isArray(media.genres)
+              ? media.genres
+              : [],
+        reasons:
+          Array.isArray(match.reasons) && match.reasons.length
+            ? match.reasons
+            : Array.isArray(media.reasons)
+              ? media.reasons
+              : [],
+        score: match.score ?? media.score,
+        position: match.position ?? media.position ?? 1,
+        duration_minutes: match.duration_minutes ?? media.duration_minutes,
+        release_year: match.release_year ?? media.release_year,
       };
       const card = createRecommendationCard(reminderMedia);
       compassPreview.replaceChildren(title, card);
@@ -468,13 +546,14 @@ function createRecommendationCard(media) {
 
   const genres = document.createElement("p");
 
-  genres.textContent = Array.isArray(media.genres)
-    ? translateCompass("compass.genres", {
-        genres: media.genres
-          .map((name) => localizedCompassGenre(name))
-          .join(", "),
-      })
-    : "";
+  genres.textContent =
+    Array.isArray(media.genres) && media.genres.length
+      ? reminderText("compass.reminder.genreLabel", {
+          genres: media.genres
+            .map((name) => localizedCompassGenre(name))
+            .join(", "),
+        })
+      : "";
 
   genres.style.cssText = `
     margin: 0 0 10px;
@@ -519,7 +598,7 @@ function createRecommendationCard(media) {
   if (Number.isInteger(Number(media.tmdb_id)) && Number(media.tmdb_id) > 0) {
     const platformsButton = document.createElement("button");
     platformsButton.type = "button";
-    platformsButton.textContent = "Де подивитися?";
+    platformsButton.textContent = reminderText("compass.watch.button");
     platformsButton.style.cssText = `
       margin-top: 14px; margin-right: 10px; padding: 10px 14px;
       border: 1px solid rgba(255,255,255,0.55); border-radius: 10px;
@@ -534,15 +613,15 @@ function createRecommendationCard(media) {
     `;
 
     const regionLabel = document.createElement("label");
-    regionLabel.textContent = "Країна: ";
+    regionLabel.textContent = reminderText("compass.watch.region");
     const regionSelect = document.createElement("select");
     regionSelect.style.cssText = `
       margin-left: 8px; padding: 7px; border-radius: 7px;
       color: #fff; background: #353775; font: inherit;
     `;
     for (const [value, name] of [
-      ["NO", "Норвегія"],
-      ["UA", "Україна"],
+      ["NO", reminderText("compass.watch.norway")],
+      ["UA", reminderText("compass.watch.ukraine")],
     ]) {
       const option = document.createElement("option");
       option.value = value;
@@ -558,7 +637,7 @@ function createRecommendationCard(media) {
     platformsPanel.append(regionLabel, platformsResult);
 
     async function loadWatchProviders() {
-      platformsResult.textContent = "Завантажуємо доступні платформи…";
+      platformsResult.textContent = reminderText("compass.watch.loading");
       regionSelect.disabled = true;
       try {
         const params = new URLSearchParams({
@@ -571,16 +650,18 @@ function createRecommendationCard(media) {
         });
         const data = await response.json().catch(() => null);
         if (!response.ok) {
-          throw new Error(data?.message || "Не вдалося завантажити платформи.");
+          throw new Error(
+            data?.message || reminderText("compass.watch.loadError"),
+          );
         }
 
         const content = document.createElement("div");
         const labels = {
-          flatrate: "За підпискою",
-          free: "Безкоштовно",
-          ads: "З рекламою",
-          rent: "Оренда",
-          buy: "Купівля",
+          flatrate: reminderText("compass.watch.subscription"),
+          free: reminderText("compass.watch.free"),
+          ads: reminderText("compass.watch.ads"),
+          rent: reminderText("compass.watch.rent"),
+          buy: reminderText("compass.watch.buy"),
         };
         let found = false;
         for (const [key, label] of Object.entries(labels)) {
@@ -596,8 +677,7 @@ function createRecommendationCard(media) {
         }
         if (!found) {
           const empty = document.createElement("p");
-          empty.textContent =
-            "Для цієї країни TMDB не має підтверджених варіантів перегляду.";
+          empty.textContent = reminderText("compass.watch.none");
           content.append(empty);
         }
 
@@ -606,21 +686,21 @@ function createRecommendationCard(media) {
           link.href = data.watch_url;
           link.target = "_blank";
           link.rel = "noopener noreferrer";
-          link.textContent = "Відкрити варіанти перегляду на TMDB ↗";
+          link.textContent = reminderText("compass.watch.open");
           link.style.cssText =
             "display: inline-block; margin-top: 8px; color: #f2c5ff;";
           link.addEventListener("click", () => rememberWatchInterest(media));
           content.append(link);
         }
         const attribution = document.createElement("p");
-        attribution.textContent =
-          "Дані про доступність: JustWatch через TMDB. Список може змінюватися. Посилання веде на TMDB, не безпосередньо до відео.";
+        attribution.textContent = reminderText("compass.watch.attribution");
         attribution.style.cssText =
           "margin: 12px 0 0; font-size: 12px; opacity: 0.8;";
         content.append(attribution);
         platformsResult.replaceChildren(content);
       } catch (error) {
-        platformsResult.textContent = error.message || "Помилка завантаження.";
+        platformsResult.textContent =
+          error.message || reminderText("compass.watch.genericError");
       } finally {
         regionSelect.disabled = false;
       }
@@ -640,7 +720,7 @@ function createRecommendationCard(media) {
     const watchedButton = document.createElement("button");
     watchedButton.type = "button";
     watchedButton.className = "compass-watched-toggle";
-    watchedButton.textContent = "Переглянуто";
+    watchedButton.textContent = reminderText("compass.reminder.watched");
     watchedButton.style.cssText = `
       margin-top: 14px; padding: 10px 14px; border: 1px solid #c080dd;
       border-radius: 10px; background: #ab75cf; color: #fff;
@@ -652,7 +732,7 @@ function createRecommendationCard(media) {
     watchedPanel.style.cssText = "margin-top: 12px; color: #fff;";
 
     const fitLabel = document.createElement("label");
-    fitLabel.textContent = "Наскільки точно Compass підібрав твір? ";
+    fitLabel.textContent = reminderText("compass.reminder.fit");
     const fitSelect = document.createElement("select");
     fitSelect.required = true;
     fitSelect.style.cssText =
@@ -666,14 +746,14 @@ function createRecommendationCard(media) {
     fitLabel.append(fitSelect);
 
     const achievedLabel = document.createElement("label");
-    achievedLabel.textContent = "Чи відчув(-ла) ти бажану емоцію? ";
+    achievedLabel.textContent = reminderText("compass.reminder.achieved");
     const achieved = document.createElement("select");
     achieved.style.cssText =
       "padding: 8px; margin: 8px; color: #fff; background: #353775;";
     for (const [value, label] of [
-      ["", "Не вказано"],
-      ["true", "Так"],
-      ["false", "Ні"],
+      ["", reminderText("compass.reminder.unspecified")],
+      ["true", reminderText("compass.reminder.answerYes")],
+      ["false", reminderText("compass.reminder.answerNo")],
     ]) {
       const option = document.createElement("option");
       option.value = value;
@@ -684,9 +764,9 @@ function createRecommendationCard(media) {
 
     const submit = document.createElement("button");
     submit.type = "button";
-    submit.textContent = "Підтвердити перегляд";
+    submit.textContent = reminderText("compass.reminder.confirm");
     submit.style.cssText =
-      "padding: 10px; border-radius: 9px; cursor: pointer;";
+      "padding: 11px 18px; border: 1px solid #c889eb; border-radius: 10px; background: #ab75cf; color: #fff; font: inherit; font-weight: 600; cursor: pointer;";
     const message = document.createElement("p");
     message.setAttribute("role", "status");
     message.setAttribute("aria-live", "polite");
@@ -706,7 +786,7 @@ function createRecommendationCard(media) {
 
     submit.addEventListener("click", async () => {
       submit.disabled = true;
-      message.textContent = "Зберігаємо…";
+      message.textContent = reminderText("compass.reminder.saving");
       try {
         const response = await fetch(
           `/api/compass/watched/${encodeURIComponent(String(media.recommendation_id))}`,
@@ -723,9 +803,10 @@ function createRecommendationCard(media) {
         );
         const result = await response.json().catch(() => null);
         if (!response.ok)
-          throw new Error(result?.message || "Не вдалося зберегти перегляд.");
-        message.textContent =
-          "Додано до My List (Completed). Оцінку фільму, думку та обкладинку можна додати в бібліотеці.";
+          throw new Error(
+            result?.message || reminderText("compass.reminder.saveError"),
+          );
+        message.textContent = reminderText("compass.reminder.saved");
         watchedButton.disabled = true;
         submit.hidden = true;
         clearWatchInterest(media);
