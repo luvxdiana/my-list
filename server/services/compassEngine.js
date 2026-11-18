@@ -168,6 +168,7 @@ function scoreCandidates({
 
     return {
       id: media.id,
+      tmdb_id: media.tmdb_id ?? null,
       title: media.title,
       category: media.category,
       release_year: media.release_year,

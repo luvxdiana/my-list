@@ -372,6 +372,199 @@ router.put("/feedback/:recommendationId", requireAuth, async (req, res) => {
   }
 });
 
+// Confirm Watched
+
+router.post("/watched/:recommendationId", requireAuth, async (req, res) => {
+  const recommendationId = req.params.recommendationId;
+  const { emotional_fit_rating, desired_emotion_achieved = null } =
+    req.body || {};
+
+  if (!isValidDatabaseId(recommendationId)) {
+    return res.status(400).json({ message: "Invalid recommendation ID." });
+  }
+  if (
+    !Number.isInteger(emotional_fit_rating) ||
+    emotional_fit_rating < 1 ||
+    emotional_fit_rating > 5
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Emotional fit rating must be from 1 to 5." });
+  }
+  if (
+    desired_emotion_achieved !== null &&
+    typeof desired_emotion_achieved !== "boolean"
+  ) {
+    return res.status(400).json({ message: "Invalid emotion response." });
+  }
+
+  try {
+    const found = await pool.query(
+      `SELECT media.id, media.tmdb_id, media.category, media.title,
+              media.duration_minutes, media.release_year,
+              COALESCE((SELECT array_agg(genre.name ORDER BY genre.name)
+                FROM public.media_genres mg
+                JOIN public.genres genre ON genre.id = mg.genre_id
+                WHERE mg.media_id = media.id), ARRAY[]::text[]) AS genres
+         FROM public.compass_recommendations recommendation
+         JOIN public.compass_requests request ON request.id = recommendation.request_id
+         JOIN public.media_catalog media ON media.id = recommendation.media_id
+        WHERE recommendation.id = $1 AND request.user_id = $2`,
+      [recommendationId, req.userId],
+    );
+    if (!found.rowCount)
+      return res.status(404).json({ message: "Recommendation not found." });
+
+    const media = found.rows[0];
+    if (!Number.isInteger(media.tmdb_id) || media.tmdb_id <= 0) {
+      return res
+        .status(422)
+        .json({ message: "This work has no verified TMDB ID yet." });
+    }
+    const token = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
+    if (!token) {
+      return res
+        .status(503)
+        .json({
+          message: "TMDB is not configured; unable to prefill description.",
+        });
+    }
+
+    const type = media.category === "movie" ? "movie" : "tv";
+    const api = new URL(
+      `https://api.themoviedb.org/3/${type}/${media.tmdb_id}`,
+    );
+    api.searchParams.set("language", "en-US");
+    const response = await fetch(api, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) {
+      return res
+        .status(502)
+        .json({
+          message: "TMDB details could not be loaded. Nothing was saved.",
+        });
+    }
+    const details = await response.json();
+    const verifiedTitle = type === "movie" ? details.title : details.name;
+    if (
+      details.id !== media.tmdb_id ||
+      details.adult === true ||
+      typeof verifiedTitle !== "string" ||
+      !verifiedTitle.trim()
+    ) {
+      return res
+        .status(422)
+        .json({ message: "TMDB details do not match the recommended work." });
+    }
+
+    const releaseDate =
+      type === "movie" ? details.release_date : details.first_air_date;
+    const tmdbYear =
+      typeof releaseDate === "string" && /^\d{4}-/.test(releaseDate)
+        ? Number(releaseDate.slice(0, 4))
+        : null;
+    if (
+      media.release_year &&
+      tmdbYear &&
+      Number(media.release_year) !== tmdbYear
+    ) {
+      return res
+        .status(422)
+        .json({ message: "TMDB release year does not match the catalog." });
+    }
+
+    const title = verifiedTitle.trim().slice(0, 255);
+    const description =
+      typeof details.overview === "string"
+        ? details.overview.slice(0, 20000)
+        : null;
+    const genres = media.genres.slice(0, 5);
+    while (genres.join(", ").length > 100) genres.pop();
+    const genre = genres.join(", ") || null;
+    const length =
+      media.category === "movie"
+        ? Number.isInteger(details.runtime) && details.runtime >= 0
+          ? details.runtime
+          : null
+        : Number.isInteger(details.number_of_episodes) &&
+            details.number_of_episodes >= 0
+          ? details.number_of_episodes
+          : null;
+
+    const db = await pool.connect();
+    try {
+      await db.query("BEGIN");
+      // Legacy entries with no ID cannot safely be relinked automatically.
+      const legacy = await db.query(
+        `SELECT id FROM public.entries WHERE user_id=$1 AND category=$2
+           AND tmdb_id IS NULL AND lower(btrim(title)) = lower(btrim($3))
+         LIMIT 1`,
+        [req.userId, media.category, title],
+      );
+      if (legacy.rowCount) {
+        await db.query("ROLLBACK");
+        return res
+          .status(409)
+          .json({
+            message:
+              "A work with this title is already in your library. Link it manually before confirming.",
+          });
+      }
+
+      const saved = await db.query(
+        `INSERT INTO public.entries
+          (user_id, title, category, genre, description, status, rating,
+           total_episodes, duration_minutes, tmdb_id)
+         VALUES ($1,$2,$3,$4,$5,'completed',NULL,$6,$7,$8)
+         ON CONFLICT (user_id, category, tmdb_id)
+           WHERE tmdb_id IS NOT NULL AND category IN ('movie', 'series')
+         DO UPDATE SET status = 'completed', updated_at = NOW()
+         RETURNING id::text, title, status, tmdb_id`,
+        [
+          req.userId,
+          title,
+          media.category,
+          genre,
+          description,
+          media.category === "series" ? length : null,
+          media.category === "movie" ? length : null,
+          media.tmdb_id,
+        ],
+      );
+
+      const feedback = await db.query(
+        `INSERT INTO public.compass_feedback
+           (recommendation_id, emotional_fit_rating, desired_emotion_achieved)
+         VALUES ($1,$2,$3)
+         ON CONFLICT (recommendation_id) DO UPDATE SET
+           emotional_fit_rating=EXCLUDED.emotional_fit_rating,
+           desired_emotion_achieved=EXCLUDED.desired_emotion_achieved,
+           updated_at=NOW()
+         RETURNING emotional_fit_rating`,
+        [recommendationId, emotional_fit_rating, desired_emotion_achieved],
+      );
+      await db.query("COMMIT");
+      return res.json({
+        message: "Watched work added to My List.",
+        entry: saved.rows[0],
+        feedback: feedback.rows[0],
+      });
+    } catch (error) {
+      await db.query("ROLLBACK");
+      throw error;
+    } finally {
+      db.release();
+    }
+  } catch (error) {
+    console.error("Compass watched error:", error);
+    return res
+      .status(500)
+      .json({ message: "Unable to confirm watched media." });
+  }
+});
+
 // History Delete
 
 router.delete("/history/:requestId", requireAuth, async (req, res) => {
@@ -456,7 +649,31 @@ router.post("/recommend", requireAuth, async (req, res) => {
       onboardingGenres,
       libraryGenres,
     );
+
     const catalog = await loadCompassCatalog();
+
+    // Watched Media
+    const watchedResult = await pool.query(
+      `
+        SELECT DISTINCT category, tmdb_id
+        FROM public.entries
+        WHERE user_id = $1
+          AND category IN ('movie', 'series')
+          AND status = 'completed'
+          AND tmdb_id IS NOT NULL
+      `,
+      [req.userId],
+    );
+
+    const watchedKeys = new Set(
+      watchedResult.rows.map((entry) => `${entry.category}:${entry.tmdb_id}`),
+    );
+
+    const availableCatalog = catalog.filter(
+      (media) =>
+        media.tmdb_id == null ||
+        !watchedKeys.has(`${media.category}:${media.tmdb_id}`),
+    );
 
     // Personal Feedback
 
@@ -488,8 +705,8 @@ router.post("/recommend", requireAuth, async (req, res) => {
       [req.userId],
     );
 
-    const recommendations = recommendMedia({
-      catalog,
+    const ranked = recommendMedia({
+      catalog: availableCatalog,
       currentMood: current_mood,
       desiredEmotion: desired_emotion,
       availableTime: available_time,
@@ -497,6 +714,14 @@ router.post("/recommend", requireAuth, async (req, res) => {
       preferredGenres,
       historicalFeedback: feedbackResult.rows,
     });
+
+    const catalogById = new Map(
+      availableCatalog.map((item) => [String(item.id), item]),
+    );
+    const recommendations = ranked.map((item) => ({
+      ...item,
+      tmdb_id: catalogById.get(String(item.id))?.tmdb_id ?? null,
+    }));
 
     const result = getRecommendationStatus(recommendations.length);
 

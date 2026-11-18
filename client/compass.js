@@ -114,8 +114,17 @@ compassDialog.addEventListener("click", (event) => {
   }
 });
 
-compassForm.addEventListener("change", () => {
-  compassPreview.hidden = true;
+compassForm.addEventListener("change", (event) => {
+  const preferenceFields = new Set([
+    "current_mood",
+    "desired_emotion",
+    "available_time",
+    "content_type",
+  ]);
+
+  if (preferenceFields.has(event.target?.name)) {
+    compassPreview.hidden = true;
+  }
 });
 
 // Preview
@@ -365,6 +374,227 @@ function createRecommendationCard(media) {
 
   card.append(title, details, genres, reasons, score);
 
+  // Watch Providers
+  if (Number.isInteger(Number(media.tmdb_id)) && Number(media.tmdb_id) > 0) {
+    const platformsButton = document.createElement("button");
+    platformsButton.type = "button";
+    platformsButton.textContent = "Де подивитися?";
+    platformsButton.style.cssText = `
+      margin-top: 14px; margin-right: 10px; padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.55); border-radius: 10px;
+      background: transparent; color: #fff; font: inherit; cursor: pointer;
+    `;
+
+    const platformsPanel = document.createElement("div");
+    platformsPanel.hidden = true;
+    platformsPanel.style.cssText = `
+      margin-top: 12px; padding: 14px; border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 10px; color: #fff; font-size: 14px; line-height: 1.6;
+    `;
+
+    const regionLabel = document.createElement("label");
+    regionLabel.textContent = "Країна: ";
+    const regionSelect = document.createElement("select");
+    regionSelect.style.cssText = `
+      margin-left: 8px; padding: 7px; border-radius: 7px;
+      color: #fff; background: #353775; font: inherit;
+    `;
+    for (const [value, name] of [
+      ["NO", "Норвегія"],
+      ["UA", "Україна"],
+    ]) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = name;
+      regionSelect.append(option);
+    }
+    regionLabel.append(regionSelect);
+
+    const platformsResult = document.createElement("div");
+    platformsResult.setAttribute("role", "status");
+    platformsResult.setAttribute("aria-live", "polite");
+    platformsResult.style.marginTop = "12px";
+    platformsPanel.append(regionLabel, platformsResult);
+
+    async function loadWatchProviders() {
+      platformsResult.textContent = "Завантажуємо доступні платформи…";
+      regionSelect.disabled = true;
+      try {
+        const params = new URLSearchParams({
+          type: media.category,
+          id: String(media.tmdb_id),
+          region: regionSelect.value,
+        });
+        const response = await fetch(`/api/tmdb/watch-providers?${params}`, {
+          credentials: "same-origin",
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(data?.message || "Не вдалося завантажити платформи.");
+        }
+
+        const content = document.createElement("div");
+        const labels = {
+          flatrate: "За підпискою",
+          free: "Безкоштовно",
+          ads: "З рекламою",
+          rent: "Оренда",
+          buy: "Купівля",
+        };
+        let found = false;
+        for (const [key, label] of Object.entries(labels)) {
+          const providers = Array.isArray(data.providers?.[key])
+            ? data.providers[key]
+            : [];
+          if (!providers.length) continue;
+          found = true;
+          const line = document.createElement("p");
+          line.style.margin = "6px 0";
+          line.textContent = `${label}: ${[...new Set(providers.map((p) => p.name))].join(", ")}`;
+          content.append(line);
+        }
+        if (!found) {
+          const empty = document.createElement("p");
+          empty.textContent =
+            "Для цієї країни TMDB не має підтверджених варіантів перегляду.";
+          content.append(empty);
+        }
+
+        if (data.watch_url) {
+          const link = document.createElement("a");
+          link.href = data.watch_url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "Відкрити варіанти перегляду на TMDB ↗";
+          link.style.cssText =
+            "display: inline-block; margin-top: 8px; color: #f2c5ff;";
+          content.append(link);
+        }
+        const attribution = document.createElement("p");
+        attribution.textContent =
+          "Дані про доступність: JustWatch через TMDB. Список може змінюватися. Посилання веде на TMDB, не безпосередньо до відео.";
+        attribution.style.cssText =
+          "margin: 12px 0 0; font-size: 12px; opacity: 0.8;";
+        content.append(attribution);
+        platformsResult.replaceChildren(content);
+      } catch (error) {
+        platformsResult.textContent = error.message || "Помилка завантаження.";
+      } finally {
+        regionSelect.disabled = false;
+      }
+    }
+
+    platformsButton.addEventListener("click", () => {
+      platformsPanel.hidden = !platformsPanel.hidden;
+      if (!platformsPanel.hidden && !platformsResult.hasChildNodes()) {
+        loadWatchProviders();
+      }
+    });
+    regionSelect.addEventListener("change", loadWatchProviders);
+    card.append(platformsButton, platformsPanel);
+  }
+
+  if (media.recommendation_id) {
+    const watchedButton = document.createElement("button");
+    watchedButton.type = "button";
+    watchedButton.textContent = "Переглянуто";
+    watchedButton.style.cssText = `
+      margin-top: 14px; padding: 10px 14px; border: 1px solid #c080dd;
+      border-radius: 10px; background: #ab75cf; color: #fff;
+      font: inherit; cursor: pointer;
+    `;
+
+    const watchedPanel = document.createElement("div");
+    watchedPanel.hidden = true;
+    watchedPanel.style.cssText = "margin-top: 12px; color: #fff;";
+
+    const fitLabel = document.createElement("label");
+    fitLabel.textContent = "Наскільки точно Compass підібрав твір? ";
+    const fitSelect = document.createElement("select");
+    fitSelect.required = true;
+    fitSelect.style.cssText =
+      "padding: 8px; margin: 8px; color: #fff; background: #353775;";
+    for (let i = 1; i <= 5; i += 1) {
+      const option = document.createElement("option");
+      option.value = String(i);
+      option.textContent = `${i} / 5`;
+      fitSelect.append(option);
+    }
+    fitLabel.append(fitSelect);
+
+    const achievedLabel = document.createElement("label");
+    achievedLabel.textContent = "Чи відчув(-ла) ти бажану емоцію? ";
+    const achieved = document.createElement("select");
+    achieved.style.cssText =
+      "padding: 8px; margin: 8px; color: #fff; background: #353775;";
+    for (const [value, label] of [
+      ["", "Не вказано"],
+      ["true", "Так"],
+      ["false", "Ні"],
+    ]) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      achieved.append(option);
+    }
+    achievedLabel.append(achieved);
+
+    const submit = document.createElement("button");
+    submit.type = "button";
+    submit.textContent = "Підтвердити перегляд";
+    submit.style.cssText =
+      "padding: 10px; border-radius: 9px; cursor: pointer;";
+    const message = document.createElement("p");
+    message.setAttribute("role", "status");
+    message.setAttribute("aria-live", "polite");
+    message.style.cssText = "font-size: 13px; margin-top: 8px;";
+
+    watchedPanel.append(
+      fitLabel,
+      document.createElement("br"),
+      achievedLabel,
+      document.createElement("br"),
+      submit,
+      message,
+    );
+    watchedButton.addEventListener("click", () => {
+      watchedPanel.hidden = !watchedPanel.hidden;
+    });
+
+    submit.addEventListener("click", async () => {
+      submit.disabled = true;
+      message.textContent = "Зберігаємо…";
+      try {
+        const response = await fetch(
+          `/api/compass/watched/${encodeURIComponent(String(media.recommendation_id))}`,
+          {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              emotional_fit_rating: Number(fitSelect.value),
+              desired_emotion_achieved:
+                achieved.value === "" ? null : achieved.value === "true",
+            }),
+          },
+        );
+        const result = await response.json().catch(() => null);
+        if (!response.ok)
+          throw new Error(result?.message || "Не вдалося зберегти перегляд.");
+        message.textContent =
+          "Додано до My List (Completed). Оцінку фільму, думку та обкладинку можна додати в бібліотеці.";
+        watchedButton.disabled = true;
+        submit.hidden = true;
+      } catch (error) {
+        message.textContent = error.message;
+      } finally {
+        submit.disabled = false;
+      }
+    });
+
+    card.append(watchedButton, watchedPanel);
+  }
+
   return card;
 }
 
@@ -426,6 +656,14 @@ function showRecommendations(data, preferences) {
   });
 }
 
+// Persistent Recommendation IDs
+
+const historyChoice = document.querySelector(".compass-save-history");
+if (historyChoice) historyChoice.style.display = "none";
+
+const compassPrivacyNote = compassForm.querySelector(".compass-privacy-note");
+if (compassPrivacyNote) compassPrivacyNote.style.display = "none";
+
 // Search Recommendations
 
 compassForm.addEventListener("submit", async (event) => {
@@ -442,7 +680,7 @@ compassForm.addEventListener("submit", async (event) => {
 
   // Optional History Saving
 
-  const saveHistory = formData.get("save_history") === "true";
+  const saveHistory = true;
 
   const validPreferences = Object.entries(preferences).every(
     ([field, value]) => {
@@ -519,507 +757,6 @@ compassForm.addEventListener("submit", async (event) => {
   }
 });
 
-// Saved Compass History
-
-const compassHistoryHost = document.querySelector(".compass-dialog-scroll");
-
-if (compassHistoryHost) {
-  const historySection = document.createElement("section");
-  historySection.className = "compass-history-section";
-  historySection.style.cssText = `
-    margin: 26px 0 8px;
-    padding-top: 22px;
-    border-top: 1px solid rgba(255, 255, 255, 0.22);
-  `;
-
-  const historyButton = document.createElement("button");
-  historyButton.type = "button";
-  historyButton.textContent = translateCompass("compass.history.view");
-  historyButton.setAttribute("aria-controls", "compass-history-results");
-  historyButton.setAttribute("aria-expanded", "false");
-  historyButton.style.cssText = `
-    width: 100%;
-    padding: 13px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-  `;
-
-  const historyResults = document.createElement("div");
-  historyResults.id = "compass-history-results";
-  historyResults.setAttribute("aria-live", "polite");
-  historyResults.hidden = true;
-  historyResults.style.marginTop = "14px";
-
-  historySection.append(historyButton, historyResults);
-  compassHistoryHost.append(historySection);
-
-  function historyMessage(message) {
-    const paragraph = document.createElement("p");
-    paragraph.textContent = message;
-    paragraph.style.cssText = `
-      padding: 12px 14px;
-      margin: 0;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.08);
-      color: #fff;
-      line-height: 1.6;
-    `;
-    historyResults.replaceChildren(paragraph);
-  }
-
-  function historyDate(value) {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-      ? translateCompass("compass.history.dateError")
-      : date.toLocaleString(
-          window.MyListI18n?.getLanguage() === "uk" ? "uk-UA" : "en-GB",
-          {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          },
-        );
-  }
-
-  // Feedback Form
-
-  function createFeedbackForm(recommendation, onSaved) {
-    const form = document.createElement("form");
-    form.className = "compass-feedback-form";
-    form.style.cssText = `
-      margin: 10px 0 18px;
-      padding: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 12px;
-      background: rgba(20, 15, 62, 0.24);
-    `;
-
-    const heading = document.createElement("p");
-    heading.textContent = recommendation.feedback
-      ? translateCompass("compass.feedback.editTitle")
-      : translateCompass("compass.feedback.rateTitle");
-    heading.style.cssText = `
-      margin: 0 0 12px;
-      font-size: 13px;
-      line-height: 1.5;
-      opacity: 0.9;
-    `;
-
-    const fields = document.createElement("div");
-    fields.style.cssText = `
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 12px;
-    `;
-
-    function makeField(text, element) {
-      const label = document.createElement("label");
-      label.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        font-size: 13px;
-        line-height: 1.5;
-        color: #fff;
-      `;
-
-      const caption = document.createElement("span");
-      caption.textContent = text;
-      label.append(caption, element);
-      return label;
-    }
-
-    function makeSelect() {
-      const select = document.createElement("select");
-      select.style.cssText = `
-        box-sizing: border-box;
-        width: 100%;
-        min-height: 39px;
-        padding: 8px 10px;
-        border: 1px solid rgba(255, 255, 255, 0.42);
-        border-radius: 9px;
-        background: #353775;
-        color: #fff;
-        font: inherit;
-        font-size: 13px;
-        cursor: pointer;
-      `;
-      return select;
-    }
-
-    function addOption(select, value, label) {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
-      select.append(option);
-    }
-
-    const emotionalFit = makeSelect();
-    emotionalFit.required = true;
-    addOption(
-      emotionalFit,
-      "",
-      translateCompass("compass.feedback.selectRating"),
-    );
-
-    for (let value = 1; value <= 5; value += 1) {
-      addOption(emotionalFit, String(value), `${value} / 5`);
-    }
-
-    emotionalFit.value =
-      recommendation.feedback?.emotional_fit_rating == null
-        ? ""
-        : String(recommendation.feedback.emotional_fit_rating);
-
-    const mediaRating = makeSelect();
-    addOption(mediaRating, "", translateCompass("compass.feedback.notRated"));
-
-    for (let halfStars = 1; halfStars <= 10; halfStars += 1) {
-      const value = halfStars / 2;
-      addOption(mediaRating, String(value), `${value.toFixed(1)} / 5`);
-    }
-
-    mediaRating.value =
-      recommendation.feedback?.media_rating == null
-        ? ""
-        : String(Number(recommendation.feedback.media_rating));
-
-    const emotionAchieved = makeSelect();
-    addOption(
-      emotionAchieved,
-      "",
-      translateCompass("compass.feedback.noAnswer"),
-    );
-    addOption(
-      emotionAchieved,
-      "true",
-      translateCompass("compass.feedback.yes"),
-    );
-    addOption(
-      emotionAchieved,
-      "false",
-      translateCompass("compass.feedback.no"),
-    );
-    emotionAchieved.value =
-      recommendation.feedback?.desired_emotion_achieved == null
-        ? ""
-        : String(recommendation.feedback.desired_emotion_achieved);
-
-    fields.append(
-      makeField(translateCompass("compass.feedback.fit"), emotionalFit),
-      makeField(translateCompass("compass.feedback.rating"), mediaRating),
-      makeField(translateCompass("compass.feedback.achieved"), emotionAchieved),
-    );
-
-    const comment = document.createElement("textarea");
-    comment.maxLength = 2000;
-    comment.rows = 2;
-    comment.placeholder = translateCompass("compass.feedback.note");
-    comment.value = recommendation.feedback?.comment || "";
-    comment.style.cssText = `
-      box-sizing: border-box;
-      width: 100%;
-      padding: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.42);
-      border-radius: 9px;
-      background: rgba(20, 15, 62, 0.4);
-      color: #fff;
-      font: inherit;
-      font-size: 13px;
-      resize: vertical;
-    `;
-
-    const commentField = makeField(
-      translateCompass("compass.feedback.comment"),
-      comment,
-    );
-    commentField.style.marginTop = "12px";
-
-    const actions = document.createElement("div");
-    actions.style.cssText = `
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 12px;
-      margin-top: 12px;
-    `;
-
-    const submitButton = document.createElement("button");
-    submitButton.type = "submit";
-    submitButton.textContent = recommendation.feedback
-      ? translateCompass("compass.feedback.update")
-      : translateCompass("compass.feedback.save");
-    submitButton.style.cssText = `
-      padding: 10px 14px;
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      border-radius: 9px;
-      background: #ab75cf;
-      color: #fff;
-      font: inherit;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-    `;
-
-    const status = document.createElement("span");
-    status.setAttribute("role", "status");
-    status.setAttribute("aria-live", "polite");
-    status.style.cssText = "font-size: 13px; line-height: 1.5;";
-    actions.append(submitButton, status);
-
-    form.append(heading, fields, commentField, actions);
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const recommendationId = recommendation.recommendation_id;
-
-      if (!recommendationId || !emotionalFit.value) {
-        status.textContent = translateCompass("compass.feedback.fitRequired");
-        return;
-      }
-
-      const payload = {
-        emotional_fit_rating: Number(emotionalFit.value),
-        media_rating: mediaRating.value ? Number(mediaRating.value) : null,
-        desired_emotion_achieved:
-          emotionAchieved.value === ""
-            ? null
-            : emotionAchieved.value === "true",
-        comment: comment.value.trim() || null,
-      };
-
-      submitButton.disabled = true;
-      submitButton.textContent = translateCompass("compass.feedback.saving");
-      status.textContent = "";
-
-      try {
-        const response = await fetch(
-          `/api/compass/feedback/${encodeURIComponent(String(recommendationId))}`,
-          {
-            method: "PUT",
-            credentials: "same-origin",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
-        );
-
-        const data = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          throw new Error(
-            response.status === 401
-              ? translateCompass("compass.session.expired")
-              : data?.message || translateCompass("compass.feedback.saveError"),
-          );
-        }
-
-        recommendation.feedback = data?.feedback || payload;
-        heading.textContent = translateCompass("compass.feedback.editTitle");
-        status.textContent = translateCompass("compass.feedback.saved");
-        onSaved(recommendation.feedback);
-      } catch (error) {
-        status.textContent =
-          error.message || translateCompass("compass.feedback.saveError");
-      } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = recommendation.feedback
-          ? translateCompass("compass.feedback.update")
-          : translateCompass("compass.feedback.save");
-      }
-    });
-
-    return form;
-  }
-
-  function createHistoryEntry(entry) {
-    const card = document.createElement("article");
-    card.style.cssText = `
-      margin: 0 0 12px;
-      padding: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.24);
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.08);
-      color: #fff;
-    `;
-
-    const heading = document.createElement("h4");
-    heading.textContent = historyDate(entry.created_at);
-    heading.style.cssText = "margin: 0 0 8px; font-size: 16px;";
-
-    const moodLabel =
-      compassLabels.current_mood[entry.current_mood] || entry.current_mood;
-    const emotionLabel =
-      compassLabels.desired_emotion[entry.desired_emotion] ||
-      entry.desired_emotion;
-    const timeLabel =
-      compassLabels.available_time[entry.available_time] ||
-      entry.available_time;
-    const typeLabel =
-      compassLabels.content_type[entry.content_type] || entry.content_type;
-
-    const details = document.createElement("p");
-    details.textContent = `${moodLabel} → ${emotionLabel} · ${timeLabel} · ${typeLabel}`;
-    details.style.cssText = "margin: 0 0 12px; line-height: 1.6; opacity: 0.9;";
-
-    const list = document.createElement("ol");
-    list.style.cssText =
-      "margin: 0 0 14px; padding-left: 22px; line-height: 1.8;";
-
-    const recommendations = Array.isArray(entry.recommendations)
-      ? entry.recommendations
-      : [];
-
-    if (recommendations.length === 0) {
-      const empty = document.createElement("p");
-      empty.textContent = translateCompass("compass.history.noMatches");
-      empty.style.cssText = "margin: 0 0 14px; opacity: 0.85;";
-      card.append(heading, details, empty);
-    } else {
-      for (const recommendation of recommendations) {
-        const item = document.createElement("li");
-        const score = Number(recommendation.score);
-        const scoreLabel = Number.isFinite(score)
-          ? translateCompass("compass.history.score", {
-              score: score.toFixed(2),
-            })
-          : "";
-
-        const summary = document.createElement("div");
-        summary.style.cssText = "margin: 0 0 8px; font-weight: 600;";
-
-        const title = document.createElement("span");
-        title.textContent = `${recommendation.title}${scoreLabel}`;
-
-        const feedbackLabel = document.createElement("span");
-        const updateFeedbackLabel = (feedback) => {
-          const fit = feedback?.emotional_fit_rating;
-          feedbackLabel.textContent =
-            fit == null
-              ? ""
-              : translateCompass("compass.history.emotionalFit", { fit });
-        };
-
-        updateFeedbackLabel(recommendation.feedback);
-        summary.append(title, feedbackLabel);
-        item.append(
-          summary,
-          createFeedbackForm(recommendation, updateFeedbackLabel),
-        );
-        list.append(item);
-      }
-      card.append(heading, details, list);
-    }
-
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.textContent = translateCompass("compass.history.delete");
-    deleteButton.style.cssText = `
-      padding: 9px 12px;
-      border: 1px solid rgba(255, 180, 190, 0.75);
-      border-radius: 9px;
-      background: rgba(150, 40, 60, 0.18);
-      color: #fff;
-      font: inherit;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    `;
-
-    deleteButton.addEventListener("click", async () => {
-      const confirmed = window.confirm(
-        translateCompass("compass.history.deleteConfirm"),
-      );
-      if (!confirmed) return;
-
-      deleteButton.disabled = true;
-      deleteButton.textContent = translateCompass("compass.history.deleting");
-
-      try {
-        const response = await fetch(
-          `/api/compass/history/${encodeURIComponent(String(entry.id))}`,
-          { method: "DELETE", credentials: "same-origin" },
-        );
-        const data = await response.json().catch(() => null);
-        if (!response.ok) {
-          throw new Error(
-            data?.message || translateCompass("compass.history.deleteError"),
-          );
-        }
-        await loadCompassHistory();
-      } catch (error) {
-        historyMessage(
-          error.message || translateCompass("compass.history.deleteError"),
-        );
-      } finally {
-        deleteButton.disabled = false;
-        deleteButton.textContent = translateCompass("compass.history.delete");
-      }
-    });
-
-    card.append(deleteButton);
-    return card;
-  }
-
-  async function loadCompassHistory() {
-    historyMessage(translateCompass("compass.history.loading"));
-
-    try {
-      const response = await fetch("/api/compass/history", {
-        credentials: "same-origin",
-      });
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          response.status === 401
-            ? translateCompass("compass.session.expired")
-            : data?.message || translateCompass("compass.history.loadError"),
-        );
-      }
-
-      const entries = Array.isArray(data?.history) ? data.history : [];
-
-      if (historyResults.hidden) return;
-
-      if (entries.length === 0) {
-        historyMessage(translateCompass("compass.history.empty"));
-        return;
-      }
-
-      historyResults.replaceChildren(...entries.map(createHistoryEntry));
-    } catch (error) {
-      if (!historyResults.hidden) {
-        historyMessage(
-          error.message || translateCompass("compass.history.loadError"),
-        );
-      }
-    }
-  }
-
-  document.addEventListener("mylist:languagechange", () => {
-    if (!historyResults.hidden) loadCompassHistory();
-  });
-
-  historyButton.addEventListener("click", async () => {
-    const willOpen = historyResults.hidden;
-    historyResults.hidden = !willOpen;
-    historyButton.setAttribute("aria-expanded", String(willOpen));
-    historyButton.textContent = willOpen
-      ? translateCompass("compass.history.hide")
-      : translateCompass("compass.history.view");
-
-    if (willOpen) await loadCompassHistory();
-  });
-}
-
 // Language changes
 document.addEventListener("mylist:languagechange", () => {
   refreshCompassLabels();
@@ -1029,13 +766,4 @@ document.addEventListener("mylist:languagechange", () => {
       lastCompassResults.preferences,
     );
   }
-  const historyButton = document.querySelector(
-    ".compass-history-section button",
-  );
-  const historyResults = document.getElementById("compass-history-results");
-  if (historyButton)
-    historyButton.textContent =
-      historyResults && !historyResults.hidden
-        ? translateCompass("compass.history.hide")
-        : translateCompass("compass.history.view");
 });

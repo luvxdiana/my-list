@@ -569,4 +569,91 @@ router.get("/match", requireAuth, async (req, res) => {
   });
 });
 
+// Watch Providers
+
+router.get("/watch-providers", requireAuth, async (req, res) => {
+  res.set("Cache-Control", "no-store");
+
+  if (!isTmdbReadEnabled()) {
+    return res.status(404).json({ message: "Not found." });
+  }
+
+  const { type, id, region = "NO" } = req.query;
+
+  if (!validateMediaType(type)) {
+    return res.status(400).json({ message: "Invalid media type." });
+  }
+
+  const tmdbId = getTmdbId(id);
+  if (tmdbId === null) {
+    return res.status(400).json({ message: "Invalid TMDB ID." });
+  }
+
+  if (typeof region !== "string" || !["NO", "UA"].includes(region)) {
+    return res.status(400).json({ message: "Unsupported region." });
+  }
+
+  try {
+    const endpoint = type === "movie" ? "movie" : "tv";
+    const data = await requestTmdb(`/${endpoint}/${tmdbId}/watch/providers`);
+
+    if (
+      data?.id !== tmdbId ||
+      !data.results ||
+      typeof data.results !== "object"
+    ) {
+      throw new Error("Invalid TMDB watch providers response.");
+    }
+
+    const providers = data.results[region] ?? {};
+    const categories = ["flatrate", "free", "ads", "rent", "buy"];
+    const available = {};
+
+    for (const category of categories) {
+      const list = Array.isArray(providers[category])
+        ? providers[category]
+        : [];
+      available[category] = list
+        .filter(
+          (provider) =>
+            Number.isInteger(provider.provider_id) &&
+            typeof provider.provider_name === "string" &&
+            provider.provider_name.trim().length > 0,
+        )
+        .map((provider) => ({
+          id: provider.provider_id,
+          name: provider.provider_name,
+        }));
+    }
+
+    // TMDB returns a landing page, not a direct provider playback link.
+    let watchUrl = null;
+    if (typeof providers.link === "string") {
+      try {
+        const candidate = new URL(providers.link);
+        if (
+          candidate.protocol === "https:" &&
+          ["www.themoviedb.org", "themoviedb.org"].includes(candidate.hostname)
+        ) {
+          watchUrl = candidate.href;
+        }
+      } catch {
+        // Ignore an invalid URL supplied by the external API.
+      }
+    }
+
+    return res.json({
+      source: "TMDB",
+      availability_source: "JustWatch",
+      region,
+      type,
+      tmdb_id: tmdbId,
+      providers: available,
+      watch_url: watchUrl,
+    });
+  } catch (error) {
+    return handleTmdbError(error, res);
+  }
+});
+
 module.exports = router;

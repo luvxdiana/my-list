@@ -90,6 +90,17 @@ function validateEntry(body) {
     }
   }
 
+  if (body.tmdb_id !== undefined && body.tmdb_id !== null) {
+    if (
+      !["movie", "series"].includes(category) ||
+      !Number.isSafeInteger(body.tmdb_id) ||
+      body.tmdb_id <= 0 ||
+      body.tmdb_id > 2147483647
+    ) {
+      return "Invalid TMDB ID.";
+    }
+  }
+
   return null;
 }
 
@@ -140,6 +151,7 @@ router.get("/", async (req, res) => {
                 id,
                 title,
                 category,
+                tmdb_id,
                 genre,
                 description,
                 review,
@@ -197,6 +209,7 @@ router.post("/", async (req, res) => {
     status,
     rating,
     length,
+    tmdb_id,
   } = req.body;
 
   const mediaLength =
@@ -231,27 +244,28 @@ router.post("/", async (req, res) => {
 
     const result = await pool.query(
       `
-            INSERT INTO entries (
-                user_id,
-                title,
-                category,
-                genre,
-                description,
-                review,
-                status,
-                rating,
-                total_episodes,
-                total_pages,
-                duration_minutes,
-                playtime_hours
-            )
-            VALUES (
-                $1, $2, $3, $4,
-                $5, $6, $7, $8,
-                $9, $10, $11, $12
-            )
-            RETURNING *
-            `,
+        INSERT INTO entries (
+          user_id,
+          title,
+          category,
+          genre,
+          description,
+          review,
+          status,
+          rating,
+          total_episodes,
+          total_pages,
+          duration_minutes,
+          playtime_hours,
+          tmdb_id
+        )
+        VALUES (
+          $1, $2, $3, $4,
+          $5, $6, $7, $8,
+          $9, $10, $11, $12, $13
+        )
+        RETURNING *
+      `,
       [
         req.userId,
         title.trim(),
@@ -267,6 +281,7 @@ router.post("/", async (req, res) => {
         totalPages,
         durationMinutes,
         playtimeHours,
+        tmdb_id ?? null,
       ],
     );
 
