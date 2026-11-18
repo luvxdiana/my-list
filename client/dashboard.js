@@ -902,6 +902,108 @@ entryForm.addEventListener("submit", async (event) => {
   }
 });
 
+// Delete Choice
+
+function chooseCompassDeleteAction(entry) {
+  return new Promise((resolve) => {
+    const dialog = document.createElement("dialog");
+    dialog.setAttribute(
+      "aria-label",
+      translateDashboard("dashboard.delete.title", { title: entry.title }),
+    );
+    dialog.style.cssText = `
+      position: fixed; inset: 0; margin: auto;
+      box-sizing: border-box; max-width: 480px; width: calc(100% - 32px);
+      max-height: calc(100dvh - 32px); overflow-y: auto;
+      border-radius: 18px; background: #393d7c; color: #fff;
+      padding: 26px; border: 1px solid #b47ad7; font: inherit;
+      box-shadow: 0 22px 65px rgba(15, 12, 55, .45);
+    `;
+    const heading = document.createElement("h3");
+    heading.textContent = translateDashboard("dashboard.delete.title", {
+      title: entry.title,
+    });
+    heading.style.cssText =
+      "margin: 0 0 10px; color: #e2b8ff; font-size: 22px; line-height: 1.3;";
+    const description = document.createElement("p");
+    description.textContent = translateDashboard(
+      "dashboard.delete.description",
+    );
+    description.style.cssText =
+      "margin: 0 0 18px; color: #f0e8ff; opacity: .9; font-size: 15px; line-height: 1.5;";
+    const form = document.createElement("form");
+    form.method = "dialog";
+    const groupName = "compass-delete-action";
+    for (const [value, titleKey, hintKey] of [
+      ["reset_compass", "dashboard.delete.reset", "dashboard.delete.resetHint"],
+      ["keep_watched", "dashboard.delete.keep", "dashboard.delete.keepHint"],
+    ]) {
+      const label = document.createElement("label");
+      label.style.cssText =
+        "display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 13px 10px; border-radius: 10px; background: rgba(255,255,255,.07); margin-bottom: 8px;";
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = groupName;
+      radio.value = value;
+      radio.checked = value === "reset_compass";
+      radio.style.cssText =
+        "accent-color: #c889eb; margin-top: 5px; width: 17px; height: 17px; flex-shrink: 0;";
+      const lines = document.createElement("span");
+      const title = document.createElement("strong");
+      title.textContent = translateDashboard(titleKey);
+      title.style.cssText =
+        "display: block; color: #fff; font-size: 15px; line-height: 1.4;";
+      const hint = document.createElement("small");
+      hint.textContent = `*${translateDashboard(hintKey)}`;
+      hint.style.cssText =
+        "display: block; color: #dfd4f0; font-size: 12px; margin-top: 4px; line-height: 1.45;";
+      lines.append(title, hint);
+      label.append(radio, lines);
+      form.append(label);
+    }
+    const actions = document.createElement("div");
+    actions.style.cssText =
+      "display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; flex-wrap: wrap;";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.textContent = translateDashboard("dashboard.delete.cancel");
+    const confirm = document.createElement("button");
+    confirm.type = "submit";
+    confirm.textContent = translateDashboard("dashboard.delete.confirm");
+    for (const button of [cancel, confirm]) {
+      button.style.cssText = `
+        padding: 10px 18px; border-radius: 10px; font: inherit;
+        font-weight: 600; cursor: pointer; color: #fff;
+        border: 1px solid rgba(255,255,255,.5);
+        background: transparent;
+      `;
+    }
+    confirm.style.cssText += "background: #b47ad7; border-color: #b47ad7;";
+    cancel.addEventListener("click", () => dialog.close());
+    actions.append(cancel, confirm);
+    form.append(actions);
+    dialog.append(heading, description, form);
+    document.body.append(dialog);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const selected = form.querySelector(`input[name="${groupName}"]:checked`);
+      dialog.close(selected?.value || "");
+    });
+    dialog.addEventListener(
+      "close",
+      () => {
+        const value = dialog.returnValue;
+        dialog.remove();
+        resolve(
+          ["reset_compass", "keep_watched"].includes(value) ? value : null,
+        );
+      },
+      { once: true },
+    );
+    dialog.showModal();
+  });
+}
+
 // Delete
 
 deleteButton.addEventListener("click", async () => {
@@ -909,13 +1011,20 @@ deleteButton.addEventListener("click", async () => {
     return;
   }
 
-  const confirmed = window.confirm(
-    translateDashboard("dashboard.entry.deleteConfirm"),
+  const entry = savedEntries.find(
+    (item) => String(item.id) === String(editingEntryId),
   );
-
-  if (!confirmed) {
-    return;
-  }
+  const linked =
+    entry &&
+    ["movie", "series"].includes(entry.category) &&
+    Number.isInteger(Number(entry.tmdb_id)) &&
+    Number(entry.tmdb_id) > 0;
+  const compassAction = linked
+    ? await chooseCompassDeleteAction(entry)
+    : window.confirm(translateDashboard("dashboard.entry.deleteConfirm"))
+      ? "library_only"
+      : null;
+  if (!compassAction) return;
 
   deleteButton.disabled = true;
   saveMessage.textContent = "";
@@ -926,6 +1035,8 @@ deleteButton.addEventListener("click", async () => {
       {
         method: "DELETE",
         credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ compass_action: compassAction }),
       },
     );
 

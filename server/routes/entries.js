@@ -419,59 +419,116 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   const entryId = req.params.id;
-
   if (!/^[1-9]\d*$/.test(entryId)) {
-    return res.status(400).json({
-      message: "Invalid entry ID.",
-    });
+    return res.status(400).json({ message: "Invalid entry ID." });
   }
 
+  const compassAction = req.body?.compass_action ?? null;
+  if (
+    compassAction !== null &&
+    !["reset_compass", "keep_watched"].includes(compassAction)
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Invalid Compass deletion option." });
+  }
+
+  const db = await pool.connect();
+  let deletedId = null;
   try {
-    const result = await pool.query(
-      `
-            DELETE FROM entries
-            WHERE id = $1 AND user_id = $2
-            RETURNING id, image_url
-            `,
+    await db.query("BEGIN");
+    const found = await db.query(
+      `SELECT id, category, title, tmdb_id, status
+         FROM public.entries
+        WHERE id = $1 AND user_id = $2 FOR UPDATE`,
       [entryId, req.userId],
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: "Entry not found.",
-      });
+    if (!found.rowCount) {
+      await db.query("ROLLBACK");
+      return res.status(404).json({ message: "Entry not found." });
     }
 
+    const entry = found.rows[0];
+    const linked =
+      ["movie", "series"].includes(entry.category) &&
+      Number.isInteger(entry.tmdb_id) &&
+      entry.tmdb_id > 0;
+
+    // Require an explicit choice for linked media.
+    if (linked && !compassAction) {
+      await db.query("ROLLBACK");
+      return res
+        .status(400)
+        .json({ message: "Choose how to handle Compass data." });
+    }
+
+    if (
+      linked &&
+      compassAction === "keep_watched" &&
+      entry.status === "completed"
+    ) {
+      await db.query(
+        `INSERT INTO public.compass_watched_media (user_id, category, tmdb_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, category, tmdb_id) DO NOTHING`,
+        [req.userId, entry.category, entry.tmdb_id],
+      );
+    }
+
+    if (linked && compassAction === "reset_compass") {
+      // Keep the research record, but stop using mistaken feedback in v1.3.
+      await db.query(
+        `UPDATE public.compass_feedback AS feedback
+            SET voided_at = NOW(), updated_at = NOW()
+           FROM public.compass_recommendations AS recommendation
+           JOIN public.compass_requests AS request
+             ON request.id = recommendation.request_id
+           JOIN public.media_catalog AS media
+             ON media.id = recommendation.media_id
+          WHERE feedback.recommendation_id = recommendation.id
+            AND request.user_id = $1
+            AND media.category = $2 AND media.tmdb_id = $3
+            AND feedback.voided_at IS NULL`,
+        [req.userId, entry.category, entry.tmdb_id],
+      );
+      await db.query(
+        `DELETE FROM public.compass_watched_media
+          WHERE user_id = $1 AND category = $2 AND tmdb_id = $3`,
+        [req.userId, entry.category, entry.tmdb_id],
+      );
+    }
+
+    await db.query(
+      `DELETE FROM public.entries WHERE id = $1 AND user_id = $2`,
+      [entryId, req.userId],
+    );
+    await db.query("COMMIT");
+    deletedId = entryId;
+  } catch (error) {
+    try {
+      await db.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("Entry deletion rollback error:", rollbackError);
+    }
+    console.error("Delete entry error:", error);
+    return res.status(500).json({ message: "Could not delete entry." });
+  } finally {
+    db.release();
+  }
+
+  if (deletedId !== null) {
     const photoPath = path.join(
       process.env.RAILWAY_VOLUME_MOUNT_PATH ||
         path.join(__dirname, "..", "uploads"),
-      `${entryId}.webp`,
+      `${deletedId}.webp`,
     );
-
-    console.log("Deleting entry:", entryId);
-    console.log("Photo path:", photoPath);
-
     try {
       await fs.unlink(photoPath);
-      console.log("Photo deleted successfully:", entryId);
-    } catch (fileError) {
-      if (fileError.code === "ENOENT") {
-        console.log("Photo file not found:", entryId);
-      } else {
-        console.error("Delete photo error:", fileError);
-      }
+    } catch (error) {
+      if (error.code !== "ENOENT") console.error("Delete photo error:", error);
     }
-
-    res.json({
-      message: "Entry deleted successfully.",
-    });
-  } catch (error) {
-    console.error("Delete entry error:", error);
-
-    res.status(500).json({
-      message: "Could not delete entry.",
-    });
   }
+  return res.json({ message: "Entry deleted successfully." });
 });
 
 module.exports = router;

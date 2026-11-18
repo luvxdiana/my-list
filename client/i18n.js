@@ -189,6 +189,17 @@
     "dashboard.entry.refreshFailed":
       "Запис збережено, але оновити бібліотеку не вдалося.",
     "dashboard.entry.deleteConfirm": "Назавжди видалити цей запис?",
+    "dashboard.delete.title": "Видалити «{title}»?",
+    "dashboard.delete.description":
+      "Обери, що робити з даними рекомендацій Compass.",
+    "dashboard.delete.reset": "Видалити та скасувати оцінку Compass",
+    "dashboard.delete.resetHint":
+      "Якщо твір було позначено переглянутим помилково.",
+    "dashboard.delete.keep": "Видалити лише з бібліотеки",
+    "dashboard.delete.keepHint":
+      "Якщо твір справді переглянуто, але ти хочеш прибрати його з бібліотеки.",
+    "dashboard.delete.cancel": "Скасувати",
+    "dashboard.delete.confirm": "Видалити",
     "dashboard.entry.deleteError": "Не вдалося видалити запис.",
     "dashboard.entry.deleted": "Запис успішно видалено.",
     "dashboard.entry.deleteRefreshFailed":
@@ -463,6 +474,17 @@
     "dashboard.entry.refreshFailed":
       "Entry saved, but the library could not refresh.",
     "dashboard.entry.deleteConfirm": "Delete this entry permanently?",
+    "dashboard.delete.title": "Delete “{title}”?",
+    "dashboard.delete.description":
+      "Choose what to do with your Compass recommendation data.",
+    "dashboard.delete.reset": "Delete and cancel Compass feedback",
+    "dashboard.delete.resetHint":
+      "If you marked this work as watched by mistake.",
+    "dashboard.delete.keep": "Delete from library only",
+    "dashboard.delete.keepHint":
+      "If you really watched this work but want to remove it from your library.",
+    "dashboard.delete.cancel": "Cancel",
+    "dashboard.delete.confirm": "Delete",
     "dashboard.entry.deleteError": "Could not delete entry.",
     "dashboard.entry.deleted": "Entry deleted successfully.",
     "dashboard.entry.deleteRefreshFailed":

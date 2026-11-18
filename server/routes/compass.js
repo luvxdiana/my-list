@@ -216,7 +216,8 @@ router.get("/history", requireAuth, async (req, res) => {
                       'emotional_fit_rating', feedback.emotional_fit_rating,
                       'media_rating', feedback.media_rating,
                       'desired_emotion_achieved', feedback.desired_emotion_achieved,
-                      'comment', feedback.comment
+                      'comment', feedback.comment,
+                      'voided_at', feedback.voided_at
                     )
                   END
                 )
@@ -334,6 +335,7 @@ router.put("/feedback/:recommendationId", requireAuth, async (req, res) => {
           media_rating = EXCLUDED.media_rating,
           desired_emotion_achieved = EXCLUDED.desired_emotion_achieved,
           comment = EXCLUDED.comment,
+          voided_at = NULL,
           updated_at = NOW()
         RETURNING
           id::text,
@@ -423,11 +425,9 @@ router.post("/watched/:recommendationId", requireAuth, async (req, res) => {
     }
     const token = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
     if (!token) {
-      return res
-        .status(503)
-        .json({
-          message: "TMDB is not configured; unable to prefill description.",
-        });
+      return res.status(503).json({
+        message: "TMDB is not configured; unable to prefill description.",
+      });
     }
 
     const type = media.category === "movie" ? "movie" : "tv";
@@ -440,11 +440,9 @@ router.post("/watched/:recommendationId", requireAuth, async (req, res) => {
       signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) {
-      return res
-        .status(502)
-        .json({
-          message: "TMDB details could not be loaded. Nothing was saved.",
-        });
+      return res.status(502).json({
+        message: "TMDB details could not be loaded. Nothing was saved.",
+      });
     }
     const details = await response.json();
     const verifiedTitle = type === "movie" ? details.title : details.name;
@@ -505,12 +503,10 @@ router.post("/watched/:recommendationId", requireAuth, async (req, res) => {
       );
       if (legacy.rowCount) {
         await db.query("ROLLBACK");
-        return res
-          .status(409)
-          .json({
-            message:
-              "A work with this title is already in your library. Link it manually before confirming.",
-          });
+        return res.status(409).json({
+          message:
+            "A work with this title is already in your library. Link it manually before confirming.",
+        });
       }
 
       const saved = await db.query(
@@ -541,9 +537,16 @@ router.post("/watched/:recommendationId", requireAuth, async (req, res) => {
          ON CONFLICT (recommendation_id) DO UPDATE SET
            emotional_fit_rating=EXCLUDED.emotional_fit_rating,
            desired_emotion_achieved=EXCLUDED.desired_emotion_achieved,
+           voided_at=NULL,
            updated_at=NOW()
          RETURNING emotional_fit_rating`,
         [recommendationId, emotional_fit_rating, desired_emotion_achieved],
+      );
+      await db.query(
+        `INSERT INTO public.compass_watched_media (user_id, category, tmdb_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, category, tmdb_id) DO NOTHING`,
+        [req.userId, media.category, media.tmdb_id],
       );
       await db.query("COMMIT");
       return res.json({
@@ -655,12 +658,12 @@ router.post("/recommend", requireAuth, async (req, res) => {
     // Watched Media
     const watchedResult = await pool.query(
       `
-        SELECT DISTINCT category, tmdb_id
-        FROM public.entries
-        WHERE user_id = $1
-          AND category IN ('movie', 'series')
-          AND status = 'completed'
-          AND tmdb_id IS NOT NULL
+        SELECT category, tmdb_id FROM public.entries
+         WHERE user_id = $1 AND category IN ('movie', 'series')
+           AND status = 'completed' AND tmdb_id IS NOT NULL
+        UNION
+        SELECT category, tmdb_id FROM public.compass_watched_media
+         WHERE user_id = $1
       `,
       [req.userId],
     );
@@ -699,6 +702,7 @@ router.post("/recommend", requireAuth, async (req, res) => {
         JOIN public.compass_requests AS request
           ON request.id = recommendation.request_id
         WHERE request.user_id = $1
+          AND feedback.voided_at IS NULL
         ORDER BY feedback.updated_at DESC, feedback.id DESC
         LIMIT 100
       `,
