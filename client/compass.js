@@ -82,6 +82,143 @@ if (compassMascot) {
   }
 }
 
+// Watch Reminder
+
+const COMPASS_WATCH_INTENTS_KEY = "mylist-compass-watch-intents-v1";
+let compassReminderLoadId = 0;
+
+function getWatchIntents() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(COMPASS_WATCH_INTENTS_KEY));
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveWatchIntents(items) {
+  try {
+    localStorage.setItem(
+      COMPASS_WATCH_INTENTS_KEY,
+      JSON.stringify(items.slice(-40)),
+    );
+  } catch {
+    // Browser storage might be disabled.
+  }
+}
+
+function rememberWatchInterest(media) {
+  if (!media.recommendation_id || !media.tmdb_id) return;
+  const items = getWatchIntents();
+  const id = String(media.recommendation_id);
+  const existing = items.filter(
+    (item) => String(item.recommendation_id) !== id,
+  );
+  existing.push({
+    recommendation_id: id,
+    tmdb_id: media.tmdb_id,
+    category: media.category,
+    title: media.title,
+    added_at: Date.now(),
+  });
+  saveWatchIntents(existing);
+}
+
+function clearWatchInterest(media) {
+  const items = getWatchIntents().filter(
+    (item) =>
+      !(
+        item.category === media.category &&
+        String(item.tmdb_id) === String(media.tmdb_id)
+      ),
+  );
+  saveWatchIntents(items);
+}
+
+async function showPendingWatchReminder(opening) {
+  const pending = getWatchIntents();
+  if (!pending.length) return;
+
+  try {
+    const response = await fetch("/api/compass/history", {
+      credentials: "same-origin",
+    });
+    if (!response.ok) return;
+    const result = await response.json();
+    if (!Array.isArray(result.history)) return;
+
+    // Only display recommendations found in the currently authenticated user's history.
+    const owned = new Map();
+    for (const request of result.history) {
+      for (const item of request.recommendations || []) {
+        owned.set(String(item.recommendation_id), item);
+      }
+    }
+
+    const match = [...pending].reverse().find((intent) => {
+      const item = owned.get(String(intent.recommendation_id));
+      return (
+        item && item.category === intent.category && item.title === intent.title
+      );
+    });
+
+    if (
+      !match ||
+      opening !== compassReminderLoadId ||
+      !compassDialog.open ||
+      !compassPreview.hidden
+    )
+      return;
+
+    const media = owned.get(String(match.recommendation_id));
+    const title = document.createElement("h3");
+    title.textContent = `Ти вже переглянув(-ла) «${match.title}»?`;
+    const description = document.createElement("p");
+    description.textContent =
+      "Ти відкривав(-ла) варіанти перегляду. Якщо вже подивився(-лася), оціни точність рекомендації Compass.";
+
+    const actions = document.createElement("div");
+    actions.style.cssText =
+      "display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0;";
+    function action(label) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.style.cssText =
+        "padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,.5); background: #353775; color: #fff; font: inherit; cursor: pointer;";
+      return button;
+    }
+    const yes = action("Так, оцінити");
+    const later = action("Ще не дивився(-лася)");
+    const dismiss = action("Не нагадувати");
+    actions.append(yes, later, dismiss);
+    compassPreview.replaceChildren(title, description, actions);
+    compassPreview.hidden = false;
+
+    yes.addEventListener("click", () => {
+      const reminderMedia = {
+        ...media,
+        tmdb_id: match.tmdb_id,
+        genres: [],
+        reasons: [],
+      };
+      const card = createRecommendationCard(reminderMedia);
+      compassPreview.replaceChildren(title, card);
+      const toggle = card.querySelector(".compass-watched-toggle");
+      if (toggle) toggle.click();
+    });
+    later.addEventListener("click", () => {
+      compassPreview.hidden = true;
+    });
+    dismiss.addEventListener("click", () => {
+      clearWatchInterest(match);
+      compassPreview.hidden = true;
+    });
+  } catch (error) {
+    console.warn("Compass reminder unavailable:", error);
+  }
+}
+
 // Dialog
 
 compassOpenButton.addEventListener("click", () => {
@@ -90,9 +227,13 @@ compassOpenButton.addEventListener("click", () => {
   if (!compassDialog.open) {
     compassDialog.showModal();
   }
+
+  const opening = ++compassReminderLoadId;
+  showPendingWatchReminder(opening);
 });
 
 compassCloseButton.addEventListener("click", () => {
+  compassReminderLoadId += 1;
   compassDialog.close();
 });
 
@@ -468,6 +609,7 @@ function createRecommendationCard(media) {
           link.textContent = "Відкрити варіанти перегляду на TMDB ↗";
           link.style.cssText =
             "display: inline-block; margin-top: 8px; color: #f2c5ff;";
+          link.addEventListener("click", () => rememberWatchInterest(media));
           content.append(link);
         }
         const attribution = document.createElement("p");
@@ -497,6 +639,7 @@ function createRecommendationCard(media) {
   if (media.recommendation_id) {
     const watchedButton = document.createElement("button");
     watchedButton.type = "button";
+    watchedButton.className = "compass-watched-toggle";
     watchedButton.textContent = "Переглянуто";
     watchedButton.style.cssText = `
       margin-top: 14px; padding: 10px 14px; border: 1px solid #c080dd;
@@ -585,6 +728,7 @@ function createRecommendationCard(media) {
           "Додано до My List (Completed). Оцінку фільму, думку та обкладинку можна додати в бібліотеці.";
         watchedButton.disabled = true;
         submit.hidden = true;
+        clearWatchInterest(media);
       } catch (error) {
         message.textContent = error.message;
       } finally {
@@ -668,6 +812,7 @@ if (compassPrivacyNote) compassPrivacyNote.style.display = "none";
 
 compassForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  compassReminderLoadId += 1;
 
   const formData = new FormData(compassForm);
 
