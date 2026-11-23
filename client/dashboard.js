@@ -1036,7 +1036,11 @@ deleteButton.addEventListener("click", async () => {
         method: "DELETE",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ compass_action: compassAction }),
+        body: JSON.stringify(
+          compassAction === "library_only"
+            ? {}
+            : { compass_action: compassAction },
+        ),
       },
     );
 
